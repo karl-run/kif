@@ -470,7 +470,7 @@ function renderTimelineThumbnails(): void {
     const thumbnailCanvas = document.createElement('canvas')
     thumbnailCanvas.width = 96
     thumbnailCanvas.height = 64
-    thumbnailCanvas.className = 'h-full min-w-0 flex-1 bg-zinc-100'
+    thumbnailCanvas.className = 'h-full min-w-0 flex-1 bg-zinc-100 dark:bg-zinc-900'
 
     const thumbnailContext = thumbnailCanvas.getContext('2d')
     const frameIndex =

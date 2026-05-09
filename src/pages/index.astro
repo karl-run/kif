@@ -31,32 +31,37 @@ const pageDescription =
     <meta name="generator" content={Astro.generator} />
     <title>{pageTitle}</title>
   </head>
-  <body>
+  <body class="bg-white text-zinc-950 transition-colors dark:bg-zinc-950 dark:text-zinc-100">
     <main class="mx-auto flex w-full max-w-[800px] flex-col gap-6 px-4 py-6 sm:px-6">
       <h1 class="text-3xl font-semibold tracking-tight">Kif - Annotate gif memes</h1>
 
       <div id="kif-file-picker-shell" class="relative block w-full">
         <div class="pointer-events-none absolute inset-x-6 top-6 space-y-1">
-          <label for="kif-file-picker" class="block text-lg font-medium text-zinc-900"> Click to choose a GIF </label>
-          <p class="text-sm text-zinc-600">Or drop one here.</p>
+          <label for="kif-file-picker" class="block text-lg font-medium text-zinc-900 dark:text-zinc-100">
+            Click to choose a GIF
+          </label>
+          <p class="text-sm text-zinc-600 dark:text-zinc-400">Or drop one here.</p>
         </div>
 
         <input
           id="kif-file-picker"
           type="file"
           accept="image/gif"
-          class="block w-full cursor-pointer rounded-3xl border border-dashed border-zinc-300 bg-zinc-50 px-6 pb-6 pt-24 text-sm text-zinc-700 transition hover:border-sky-400 hover:bg-sky-50 file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-700"
+          class="block w-full cursor-pointer rounded-3xl border border-dashed border-zinc-300 bg-zinc-50 px-6 pb-6 pt-24 text-sm text-zinc-700 transition hover:border-sky-400 hover:bg-sky-50 file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-sky-500 dark:hover:bg-zinc-900 dark:file:bg-zinc-100 dark:file:text-zinc-900 dark:hover:file:bg-white"
         />
       </div>
 
-      <div id="preview-viewport" class="w-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
+      <div
+        id="preview-viewport"
+        class="w-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900"
+      >
         <div id="preview-viewport-inner" class="relative flex min-h-80 w-full items-center justify-center p-4 sm:p-6">
           <div class="absolute left-4 top-4 z-20 flex flex-wrap gap-1.5">
             <button
               id="toggle-playback-button"
               type="button"
               aria-label="Pause preview"
-              class="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-200 bg-white/95 text-sm leading-none text-sky-700 shadow-sm backdrop-blur-sm transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-200 bg-white/95 text-sm leading-none text-sky-700 shadow-sm backdrop-blur-sm transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400 dark:border-sky-800 dark:bg-zinc-950/90 dark:text-sky-300 dark:hover:bg-zinc-900 dark:disabled:border-zinc-800 dark:disabled:bg-zinc-950/80 dark:disabled:text-zinc-600"
             >
               <span id="playback-icon-pause">
                 <PauseIcon class="h-4 w-4" stroke-width={2.25} />
@@ -69,7 +74,7 @@ const pageDescription =
               id="step-backward-button"
               type="button"
               aria-label="Previous frame"
-              class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950/90 dark:text-zinc-200 dark:hover:bg-zinc-900 dark:disabled:border-zinc-800 dark:disabled:bg-zinc-950/80 dark:disabled:text-zinc-600"
             >
               <span>
                 <SkipBackIcon class="h-4 w-4" stroke-width={2.25} />
@@ -79,7 +84,7 @@ const pageDescription =
               id="step-forward-button"
               type="button"
               aria-label="Next frame"
-              class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950/90 dark:text-zinc-200 dark:hover:bg-zinc-900 dark:disabled:border-zinc-800 dark:disabled:bg-zinc-950/80 dark:disabled:text-zinc-600"
             >
               <span>
                 <SkipForwardIcon class="h-4 w-4" stroke-width={2.25} />
@@ -91,32 +96,40 @@ const pageDescription =
               <div id="canvas-stack" class="relative shrink-0">
                 <div
                   id="gif-width"
-                  class="pointer-events-none absolute inset-x-0 -top-4 flex justify-center text-xs font-medium text-zinc-500"
+                  class="pointer-events-none absolute inset-x-0 -top-4 flex justify-center text-xs font-medium text-zinc-500 dark:text-zinc-400"
                 >
                 </div>
                 <div
                   id="gif-height"
-                  class="pointer-events-none absolute left-full top-1/2 -translate-x-2 -translate-y-1/2 rotate-90 whitespace-nowrap text-xs font-medium text-zinc-500"
+                  class="pointer-events-none absolute left-full top-1/2 -translate-x-2 -translate-y-1/2 rotate-90 whitespace-nowrap text-xs font-medium text-zinc-500 dark:text-zinc-400"
                 >
                 </div>
                 <div
                   id="gif-frame-counter"
-                  class="pointer-events-none absolute inset-x-0 -bottom-5 flex justify-center text-xs font-medium text-zinc-500"
+                  class="pointer-events-none absolute inset-x-0 -bottom-5 flex justify-center text-xs font-medium text-zinc-500 dark:text-zinc-400"
                 >
                 </div>
-                <canvas id="da-canvas" class="block border border-zinc-200 bg-white shadow-sm" width="240" height="240"
-                ></canvas>
+                <canvas
+                  id="da-canvas"
+                  class="block border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-950"
+                  width="240"
+                  height="240"></canvas>
                 <canvas id="fabric-canvas" class="absolute inset-0" width="240" height="240"></canvas>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <div id="preview-timeline-shell" class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-        <div class="border-b border-zinc-200 px-4 py-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+      <div
+        id="preview-timeline-shell"
+        class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+      >
+        <div
+          class="border-b border-zinc-200 px-4 py-2 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400"
+        >
           Timeline
         </div>
-        <div id="preview-timeline" class="relative h-18 bg-zinc-200">
+        <div id="preview-timeline" class="relative h-18 bg-zinc-200 dark:bg-zinc-800">
           <div id="preview-timeline-thumbnails" class="absolute inset-0 flex items-stretch gap-px"></div>
           <div
             id="preview-timeline-indicator"
@@ -135,24 +148,26 @@ const pageDescription =
           />
         </div>
       </div>
-      <section class="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <section
+        class="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+      >
         <div class="flex items-center justify-between gap-4">
           <div>
-            <h2 class="text-lg font-semibold text-zinc-900">Overlays</h2>
-            <p class="text-sm text-zinc-600">Add or edit text and picture in the gif.</p>
+            <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Overlays</h2>
+            <p class="text-sm text-zinc-600 dark:text-zinc-400">Add or edit text and picture in the gif.</p>
           </div>
           <div class="flex items-center gap-2">
             <button
               id="add-picture-node"
               type="button"
-              class="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-100"
+              class="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
             >
               Add picture
             </button>
             <button
               id="add-text-node"
               type="button"
-              class="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
+              class="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
             >
               Add text
             </button>
@@ -163,18 +178,21 @@ const pageDescription =
       <button
         id="export-gif-button"
         type="button"
-        class="w-full rounded-2xl bg-green-600 px-6 py-4 text-lg font-semibold text-white shadow-sm transition hover:bg-green-500 disabled:cursor-not-allowed disabled:bg-zinc-300"
+        class="w-full rounded-2xl bg-green-600 px-6 py-4 text-lg font-semibold text-white shadow-sm transition hover:bg-green-500 disabled:cursor-not-allowed disabled:bg-zinc-300 dark:bg-green-700 dark:hover:bg-green-600 dark:disabled:bg-zinc-700"
       >
         Export
       </button>
-      <dialog id="exported-gif-dialog" class="max-w-[min(90vw,900px)] rounded-2xl p-0 shadow-xl backdrop:bg-black/50">
+      <dialog
+        id="exported-gif-dialog"
+        class="max-w-[min(90vw,900px)] rounded-2xl border border-zinc-200 bg-white p-0 text-zinc-950 shadow-xl backdrop:bg-black/50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
+      >
         <div class="space-y-4 p-4 sm:p-6">
           <div class="flex items-center justify-between gap-4">
-            <h2 class="text-lg font-semibold text-zinc-900">Exported GIF</h2>
+            <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Exported GIF</h2>
             <form method="dialog">
               <button
                 type="submit"
-                class="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-100"
+                class="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
               >
                 Close
               </button>
@@ -183,12 +201,12 @@ const pageDescription =
           <img
             id="exported-gif-image"
             alt="Exported GIF preview"
-            class="mx-auto max-h-[70vh] max-w-full border border-zinc-200 bg-zinc-50"
+            class="mx-auto max-h-[70vh] max-w-full border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-950"
           />
           <a
             id="exported-gif-download"
             download="kif-export.gif"
-            class="inline-flex rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
+            class="inline-flex rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
           >
             Download GIF
           </a>

@@ -138,7 +138,7 @@ function createTextNodeRow(node: TextNode): HTMLDivElement {
   const input = document.createElement('input')
   input.type = 'text'
   input.className =
-    'block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100'
+    'block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:ring-sky-950'
   input.placeholder = 'Write overlay text'
   input.dataset.role = 'text-input'
   input.addEventListener('focus', () => {
@@ -166,10 +166,12 @@ function createPictureNodeRow(node: PictureNode): HTMLDivElement {
   content.className = 'space-y-3'
 
   const previewShell = document.createElement('div')
-  previewShell.className = 'flex items-center gap-3 rounded-lg border border-zinc-200 bg-white p-3'
+  previewShell.className =
+    'flex items-center gap-3 rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-950'
 
   const previewImage = document.createElement('img')
-  previewImage.className = 'h-16 w-16 rounded-md border border-zinc-200 bg-zinc-100 object-contain'
+  previewImage.className =
+    'h-16 w-16 rounded-md border border-zinc-200 bg-zinc-100 object-contain dark:border-zinc-700 dark:bg-zinc-900'
   previewImage.alt = ''
   previewImage.dataset.role = 'picture-preview'
   previewShell.append(previewImage)
@@ -178,14 +180,14 @@ function createPictureNodeRow(node: PictureNode): HTMLDivElement {
   previewMeta.className = 'min-w-0 flex-1 space-y-2'
 
   const pictureName = document.createElement('div')
-  pictureName.className = 'truncate text-sm font-medium text-zinc-900'
+  pictureName.className = 'truncate text-sm font-medium text-zinc-900 dark:text-zinc-100'
   pictureName.dataset.role = 'picture-name'
   previewMeta.append(pictureName)
 
   const replaceButton = document.createElement('button')
   replaceButton.type = 'button'
   replaceButton.className =
-    'rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-100'
+    'rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:border-zinc-600 dark:hover:bg-zinc-800'
   replaceButton.textContent = 'Replace image'
   replaceButton.addEventListener('click', () => {
     selectCanvasNode(node.id)
@@ -203,14 +205,14 @@ function createPictureNodeRow(node: PictureNode): HTMLDivElement {
 
 function createBaseNodeRow(nodeId: string): HTMLDivElement {
   const row = document.createElement('div')
-  row.className = 'rounded-xl border border-zinc-200 bg-zinc-50 p-4'
+  row.className = 'rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950'
   row.dataset.nodeId = nodeId
 
   const header = document.createElement('div')
   header.className = 'mb-3 flex items-center justify-between gap-3'
 
   const title = document.createElement('div')
-  title.className = 'text-sm font-medium text-zinc-900'
+  title.className = 'text-sm font-medium text-zinc-900 dark:text-zinc-100'
   title.dataset.role = 'title'
   header.append(title)
 
@@ -220,7 +222,7 @@ function createBaseNodeRow(nodeId: string): HTMLDivElement {
   const duplicateButton = document.createElement('button')
   duplicateButton.type = 'button'
   duplicateButton.className =
-    'rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-100'
+    'rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-zinc-600 dark:hover:bg-zinc-800'
   duplicateButton.textContent = 'Duplicate'
   duplicateButton.addEventListener('click', () => duplicateNode(nodeId))
   actions.append(duplicateButton)
@@ -228,7 +230,7 @@ function createBaseNodeRow(nodeId: string): HTMLDivElement {
   const deleteButton = document.createElement('button')
   deleteButton.type = 'button'
   deleteButton.className =
-    'rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 transition hover:border-red-300 hover:bg-red-50'
+    'rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 transition hover:border-red-300 hover:bg-red-50 dark:border-red-900 dark:bg-zinc-900 dark:text-red-400 dark:hover:border-red-800 dark:hover:bg-red-950/40'
   deleteButton.textContent = 'Delete'
   deleteButton.addEventListener('click', () => {
     store.dispatch(nodeSlice.actions.removeNode(nodeId))
@@ -249,12 +251,12 @@ function createVisibilitySection(nodeId: string): HTMLDivElement {
   visibilityHeader.className = 'flex items-center justify-between gap-3'
 
   const visibilityLabel = document.createElement('div')
-  visibilityLabel.className = 'text-xs font-medium uppercase tracking-wide text-zinc-500'
+  visibilityLabel.className = 'text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400'
   visibilityLabel.textContent = 'Visible range'
   visibilityHeader.append(visibilityLabel)
 
   const visibilityValue = document.createElement('div')
-  visibilityValue.className = 'text-xs text-zinc-600'
+  visibilityValue.className = 'text-xs text-zinc-600 dark:text-zinc-400'
   visibilityValue.dataset.role = 'visibility-value'
   visibilityHeader.append(visibilityValue)
 
@@ -264,7 +266,7 @@ function createVisibilitySection(nodeId: string): HTMLDivElement {
   sliderShell.className = 'relative h-9 touch-none'
 
   const sliderTrack = document.createElement('div')
-  sliderTrack.className = 'absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-zinc-200'
+  sliderTrack.className = 'absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-zinc-200 dark:bg-zinc-800'
   sliderShell.append(sliderTrack)
 
   const sliderFill = document.createElement('div')
@@ -275,7 +277,7 @@ function createVisibilitySection(nodeId: string): HTMLDivElement {
   const startHandle = document.createElement('button')
   startHandle.type = 'button'
   startHandle.className =
-    'absolute top-1/2 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-500 bg-white shadow-sm'
+    'absolute top-1/2 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-500 bg-white shadow-sm dark:bg-zinc-950'
   startHandle.setAttribute('aria-label', 'Start of visible range')
   startHandle.dataset.role = 'visibility-start-handle'
   startHandle.addEventListener('pointerdown', (event) => {
@@ -286,7 +288,7 @@ function createVisibilitySection(nodeId: string): HTMLDivElement {
   const endHandle = document.createElement('button')
   endHandle.type = 'button'
   endHandle.className =
-    'absolute top-1/2 z-20 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-500 bg-white shadow-sm'
+    'absolute top-1/2 z-20 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-500 bg-white shadow-sm dark:bg-zinc-950'
   endHandle.setAttribute('aria-label', 'End of visible range')
   endHandle.dataset.role = 'visibility-end-handle'
   endHandle.addEventListener('pointerdown', (event) => {
@@ -302,7 +304,7 @@ function createVisibilitySection(nodeId: string): HTMLDivElement {
   const snapStartButton = document.createElement('button')
   snapStartButton.type = 'button'
   snapStartButton.className =
-    'rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px] font-medium text-zinc-600 transition hover:border-zinc-300 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:text-zinc-400'
+    'rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px] font-medium text-zinc-600 transition hover:border-zinc-300 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:bg-zinc-800 dark:disabled:text-zinc-600'
   snapStartButton.textContent = 'Set start to current'
   snapStartButton.dataset.role = 'visibility-set-start'
   snapStartButton.addEventListener('click', () => {
@@ -313,7 +315,7 @@ function createVisibilitySection(nodeId: string): HTMLDivElement {
   const snapEndButton = document.createElement('button')
   snapEndButton.type = 'button'
   snapEndButton.className =
-    'rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px] font-medium text-zinc-600 transition hover:border-zinc-300 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:text-zinc-400'
+    'rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px] font-medium text-zinc-600 transition hover:border-zinc-300 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:bg-zinc-800 dark:disabled:text-zinc-600'
   snapEndButton.textContent = 'Set end to current'
   snapEndButton.dataset.role = 'visibility-set-end'
   snapEndButton.addEventListener('click', () => {

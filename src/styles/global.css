@@ -8,6 +8,10 @@
   font-display: block;
 }
 
+:root {
+  color-scheme: light dark;
+}
+
 .kif-range-slider {
   appearance: none;
   -webkit-appearance: none;
