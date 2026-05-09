@@ -48,7 +48,24 @@ import '../styles/global.css'
           </div>
         </div>
       </div>
+      <section class="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold text-zinc-900">Text overlays</h2>
+            <p class="text-sm text-zinc-600">Edit the overlay text nodes that are synced to the Fabric canvas.</p>
+          </div>
+          <button
+            id="add-text-node"
+            type="button"
+            class="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
+          >
+            Add new text
+          </button>
+        </div>
+        <div id="text-node-controls" class="space-y-3 text-sm text-zinc-600"></div>
+      </section>
       <script src="@editor/editor.ts"></script>
+      <script src="@editor/controls.ts"></script>
       <script src="@editor/drop.ts"></script>
     </main>
   </body>

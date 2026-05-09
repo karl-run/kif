@@ -19,17 +19,26 @@ export interface NodeState {
   byId: Record<string, EditorNode>
 }
 
-export const defaultTextNode: TextNode = {
-  id: 'default-text-node',
-  type: 'text',
-  text: 'Hello, Kif!',
-  left: 120,
-  top: 114,
-  fontSize: 50,
-  fill: '#ffffff',
-  stroke: '#000000',
-  strokeWidth: 2,
+function createTextNodeId(): string {
+  return crypto.randomUUID()
 }
+
+export function createTextNode(overrides: Partial<Omit<TextNode, 'id' | 'type'>> = {}, id = createTextNodeId()): TextNode {
+  return {
+    id,
+    type: 'text',
+    text: 'Hello, Kif!',
+    left: 120,
+    top: 114,
+    fontSize: 50,
+    fill: '#ffffff',
+    stroke: '#000000',
+    strokeWidth: 2,
+    ...overrides,
+  }
+}
+
+export const defaultTextNode: TextNode = createTextNode({}, 'default-text-node')
 
 const initialState: NodeState = {
   allIds: [defaultTextNode.id],
