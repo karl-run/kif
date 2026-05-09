@@ -86,12 +86,20 @@ if (filePickerShell && filePickerInput instanceof HTMLInputElement) {
     store.dispatch(fileSlice.actions.file(file ? rememberFile(file) : null))
   }
 
+  const restorePickedFile = () => {
+    window.requestAnimationFrame(() => {
+      syncPickedFile()
+    })
+  }
+
   filePickerShell.addEventListener('dragenter', () => setDragging(true))
   filePickerShell.addEventListener('dragleave', () => setDragging(false))
   filePickerShell.addEventListener('drop', () => {
     setDragging(false)
   })
   filePickerInput.addEventListener('change', syncPickedFile)
+  window.addEventListener('pageshow', restorePickedFile)
+  restorePickedFile()
 }
 
 if (exportGifButtonEl && exportedGifDialogEl && exportedGifImageEl && exportedGifDownloadEl) {
