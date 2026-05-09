@@ -1,5 +1,9 @@
 ---
 import '../styles/global.css'
+import PauseIcon from '@lucide/astro/icons/pause'
+import PlayIcon from '@lucide/astro/icons/play'
+import SkipBackIcon from '@lucide/astro/icons/skip-back'
+import SkipForwardIcon from '@lucide/astro/icons/skip-forward'
 ---
 
 <html lang="en">
@@ -38,7 +42,12 @@ import '../styles/global.css'
               aria-label="Pause preview"
               class="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-200 bg-white/95 text-sm leading-none text-sky-700 shadow-sm backdrop-blur-sm transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400"
             >
-              <span class="-translate-y-px">❚❚</span>
+              <span id="playback-icon-pause">
+                <PauseIcon class="h-4 w-4" stroke-width={2.25} />
+              </span>
+              <span id="playback-icon-play" class="hidden">
+                <PlayIcon class="h-4 w-4" stroke-width={2.25} />
+              </span>
             </button>
             <button
               id="step-backward-button"
@@ -46,7 +55,9 @@ import '../styles/global.css'
               aria-label="Previous frame"
               class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400"
             >
-              <span class="-translate-y-px">◀</span>
+              <span>
+                <SkipBackIcon class="h-4 w-4" stroke-width={2.25} />
+              </span>
             </button>
             <button
               id="step-forward-button"
@@ -54,7 +65,9 @@ import '../styles/global.css'
               aria-label="Next frame"
               class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400"
             >
-              <span class="-translate-y-px">▶</span>
+              <span>
+                <SkipForwardIcon class="h-4 w-4" stroke-width={2.25} />
+              </span>
             </button>
           </div>
           <div id="canvas-stack" class="relative shrink-0">

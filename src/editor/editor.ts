@@ -15,6 +15,8 @@ import {
   fabricCanvasEl,
   filePickerInput,
   filePickerShell,
+  playbackIconPauseEl,
+  playbackIconPlayEl,
   gifFrameCounterEl,
   gifHeightEl,
   gifWidthEl,
@@ -282,8 +284,9 @@ function syncPlaybackAvailability(): void {
   }
 
   togglePlaybackButtonEl.disabled = currentGifFrameCount === 0
-  togglePlaybackButtonEl.textContent = isPreviewPlaying ? '❚❚' : '▶'
   togglePlaybackButtonEl.setAttribute('aria-label', isPreviewPlaying ? 'Pause preview' : 'Play preview')
+  playbackIconPauseEl?.classList.toggle('hidden', !isPreviewPlaying)
+  playbackIconPlayEl?.classList.toggle('hidden', isPreviewPlaying)
 
   if (stepBackwardButtonEl) {
     stepBackwardButtonEl.disabled = currentGifFrameCount === 0

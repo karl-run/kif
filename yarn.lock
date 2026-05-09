@@ -703,6 +703,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@lucide/astro@npm:^1.14.0":
+  version: 1.14.0
+  resolution: "@lucide/astro@npm:1.14.0"
+  peerDependencies:
+    astro: ^4 || ^5 || ^6
+  checksum: 10c0/a6f9fc8723fbd66b5218281fa7491f0c2831d03d77b389843ea0713bb9517c228538848b1c217cae69a43fa61fd11738a6f76abc0734fb914a8dfdbc561e3887
+  languageName: node
+  linkType: hard
+
 "@napi-rs/wasm-runtime@npm:^1.1.4":
   version: 1.1.4
   resolution: "@napi-rs/wasm-runtime@npm:1.1.4"
@@ -2471,6 +2480,7 @@ __metadata:
   resolution: "kif@workspace:."
   dependencies:
     "@karl-run/prettier-config": "npm:^1.1.0"
+    "@lucide/astro": "npm:^1.14.0"
     "@reduxjs/toolkit": "npm:^2.11.2"
     "@tailwindcss/vite": "npm:^4.3.0"
     astro: "npm:^6.3.1"
