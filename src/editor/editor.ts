@@ -417,7 +417,14 @@ function syncFrameCounter(): void {
 }
 
 function syncTouchSelectionMode(): void {
-  fabricCanvas.selection = !(touchSelectionQuery?.matches ?? false)
+  const isTouchMode = touchSelectionQuery?.matches ?? false
+  const touchAction = isTouchMode ? 'manipulation' : 'none'
+
+  fabricCanvas.selection = !isTouchMode
+  fabricCanvas.allowTouchScrolling = isTouchMode
+  fabricCanvas.upperCanvasEl.style.touchAction = touchAction
+  fabricCanvas.lowerCanvasEl.style.touchAction = touchAction
+  fabricCanvas.wrapperEl.style.touchAction = touchAction
 }
 
 function syncTimelineState(): void {
