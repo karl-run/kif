@@ -1,4 +1,5 @@
 import { addTextNodeButtonEl, textNodeControlsEl } from './nodes.ts'
+import { selectCanvasTextNode } from './fabric-node-sync.ts'
 import { createTextNode, nodeSlice, type TextNode } from './state/node-slice.ts'
 import { store } from './state/redux.ts'
 
@@ -148,7 +149,11 @@ function createTextNodeRow(node: TextNode): HTMLDivElement {
     'block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100'
   input.placeholder = 'Write overlay text'
   input.dataset.role = 'text-input'
+  input.addEventListener('focus', () => {
+    selectCanvasTextNode(node.id)
+  })
   input.addEventListener('input', () => {
+    selectCanvasTextNode(node.id)
     store.dispatch(
       nodeSlice.actions.updateTextNode({
         id: node.id,
@@ -289,6 +294,7 @@ function beginRangeDrag(nodeId: string, handle: RangeHandle, sliderShell: HTMLDi
     return
   }
 
+  selectCanvasTextNode(nodeId)
   activeRangeDrag = { handle, nodeId, sliderShell }
   event.preventDefault()
   updateRangeFromPointer(nodeId, handle, sliderShell, event.clientX)

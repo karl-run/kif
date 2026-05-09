@@ -6,6 +6,7 @@ import type { AppStore } from './state/redux.ts'
 import { OverlayCanvas } from './fabric-canvas.ts'
 
 const IMPACT_FONT_FAMILY = 'Impact'
+let activeNodeSync: ReturnType<typeof initializeNodeSync> | null = null
 
 type NodeSyncOptions = {
   fabricCanvas: OverlayCanvas
@@ -73,8 +74,12 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
 
   syncNodesToCanvas()
 
-  return {
+  const api = {
     dispose() {
+      if (activeNodeSync === api) {
+        activeNodeSync = null
+      }
+
       unsubscribe()
 
       for (const nodeId of Array.from(fabricTextNodes.keys())) {
@@ -84,6 +89,16 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
     renderFrame(frameIndex: number, frameCount: number) {
       currentFrameContext = { frameCount, frameIndex }
       applyFrameVisibility(currentFrameContext)
+      fabricCanvas.renderAll()
+    },
+    selectTextNode(nodeId: string) {
+      const textObject = fabricTextNodes.get(nodeId)
+
+      if (!textObject) {
+        return
+      }
+
+      fabricCanvas.setActiveObject(textObject)
       fabricCanvas.renderAll()
     },
     sync: syncNodesToCanvas,
@@ -103,6 +118,9 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
       return overlayCanvas
     },
   }
+
+  activeNodeSync = api
+  return api
 
   function upsertTextNodeOnCanvas(node: TextNode): void {
     let textObject = fabricTextNodes.get(node.id)
@@ -200,6 +218,10 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
       textObject.setCoords()
     }
   }
+}
+
+export function selectCanvasTextNode(nodeId: string): void {
+  activeNodeSync?.selectTextNode(nodeId)
 }
 
 function isNodeVisibleAtFrame(node: TextNode, frameContext: FrameContext): boolean {

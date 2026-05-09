@@ -7,3 +7,7 @@ export const filePickerShell = document.getElementById('kif-file-picker-shell') 
 export const filePickerInput = document.getElementById('kif-file-picker') as HTMLInputElement
 export const addTextNodeButtonEl = document.getElementById('add-text-node') as HTMLButtonElement
 export const textNodeControlsEl = document.getElementById('text-node-controls') as HTMLDivElement
+export const exportGifButtonEl = document.getElementById('export-gif-button') as HTMLButtonElement
+export const exportedGifDialogEl = document.getElementById('exported-gif-dialog') as HTMLDialogElement
+export const exportedGifDownloadEl = document.getElementById('exported-gif-download') as HTMLAnchorElement
+export const exportedGifImageEl = document.getElementById('exported-gif-image') as HTMLImageElement

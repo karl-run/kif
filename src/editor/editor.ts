@@ -6,7 +6,18 @@ import { getFile, rememberFile } from './state/file-registry.ts'
 import { fileSlice } from './state/file-slice.ts'
 import { store } from './state/redux.ts'
 
-import { canvasEl, fabricCanvasEl, filePickerInput, filePickerShell, gifHeightEl, gifWidthEl } from './nodes.ts'
+import {
+  canvasEl,
+  exportGifButtonEl,
+  exportedGifDialogEl,
+  exportedGifDownloadEl,
+  exportedGifImageEl,
+  fabricCanvasEl,
+  filePickerInput,
+  filePickerShell,
+  gifHeightEl,
+  gifWidthEl,
+} from './nodes.ts'
 import { OverlayCanvas } from './fabric-canvas.ts'
 import { waitForImpactFont } from './fonts.ts'
 import { initializeNodeSync } from './fabric-node-sync.ts'
@@ -56,6 +67,13 @@ if (filePickerShell && filePickerInput instanceof HTMLInputElement) {
   filePickerInput.addEventListener('change', syncPickedFile)
 }
 
+if (exportGifButtonEl && exportedGifDialogEl && exportedGifImageEl && exportedGifDownloadEl) {
+  exportGifButtonEl.disabled = true
+  exportGifButtonEl.addEventListener('click', () => {
+    exportGifToDialog()
+  })
+}
+
 store.subscribe(() => {
   const state = store.getState()
   const currentFileId = state.files.currentFile?.id ?? null
@@ -92,9 +110,9 @@ async function syncPreviewToState(): Promise<void> {
   fabricCanvas.setDimensions({ width: decodedGif.width, height: decodedGif.height })
   gifWidthEl.textContent = `${decodedGif.width}px`
   gifHeightEl.textContent = `${decodedGif.height}px`
+  syncExportAvailability()
 
   renderFrame(0)
-  renderExportPreview()
   scheduleNextFrame()
 }
 
@@ -144,40 +162,44 @@ async function bootstrapNodeSync(): Promise<void> {
 
   nodeSync = initializeNodeSync({
     fabricCanvas,
-    onNodesRendered: () => {
-      if (previewState.frames.length > 0) {
-        renderExportPreview()
-      }
-    },
+    onNodesRendered: () => {},
     store,
   })
 }
 
-function renderExportPreview(): void {
+function exportGifToDialog(): void {
+  if (
+    previewState.frames.length === 0 ||
+    !exportedGifDialogEl ||
+    !exportedGifDownloadEl ||
+    !exportedGifImageEl ||
+    !exportGifButtonEl
+  ) {
+    return
+  }
+
+  exportGifButtonEl.disabled = true
   const exportedGif = exportGif(previewState.frames, canvasEl.width, canvasEl.height, (frameIndex) =>
     nodeSync ? nodeSync.toCanvasElementForFrame(frameIndex, previewState.frames.length) : fabricCanvas.toCanvasElement(),
   )
   const exportedGifUrl = URL.createObjectURL(exportedGif)
-  const exportedGifImage = getExportedGifImage()
 
   if (previewState.exportedGifUrl) {
     URL.revokeObjectURL(previewState.exportedGifUrl)
   }
 
   previewState.exportedGifUrl = exportedGifUrl
-  exportedGifImage.src = exportedGifUrl
+  exportedGifImageEl.src = exportedGifUrl
+  exportedGifDownloadEl.href = exportedGifUrl
+  exportedGifDialogEl.showModal()
   nodeSync?.renderFrame(previewState.currentFrameIndex, previewState.frames.length)
+  syncExportAvailability()
 }
 
-function getExportedGifImage(): HTMLImageElement {
-  const existingImage = document.getElementById('exported-gif-preview')
-
-  if (existingImage instanceof HTMLImageElement) {
-    return existingImage
+function syncExportAvailability(): void {
+  if (!exportGifButtonEl) {
+    return
   }
 
-  const image = document.createElement('img')
-  image.id = 'exported-gif-preview'
-  document.body.append(image)
-  return image
+  exportGifButtonEl.disabled = previewState.frames.length === 0
 }

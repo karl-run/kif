@@ -64,6 +64,36 @@ import '../styles/global.css'
         </div>
         <div id="text-node-controls" class="space-y-3 text-sm text-zinc-600"></div>
       </section>
+      <button
+        id="export-gif-button"
+        type="button"
+        class="w-full rounded-2xl bg-green-600 px-6 py-4 text-lg font-semibold text-white shadow-sm transition hover:bg-green-500 disabled:cursor-not-allowed disabled:bg-zinc-300"
+      >
+        Export
+      </button>
+      <dialog id="exported-gif-dialog" class="max-w-[min(90vw,900px)] rounded-2xl p-0 shadow-xl backdrop:bg-black/50">
+        <div class="space-y-4 p-4 sm:p-6">
+          <div class="flex items-center justify-between gap-4">
+            <h2 class="text-lg font-semibold text-zinc-900">Exported GIF</h2>
+            <form method="dialog">
+              <button
+                type="submit"
+                class="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-100"
+              >
+                Close
+              </button>
+            </form>
+          </div>
+          <img id="exported-gif-image" alt="Exported GIF preview" class="mx-auto max-h-[70vh] max-w-full rounded-xl border border-zinc-200 bg-zinc-50" />
+          <a
+            id="exported-gif-download"
+            download="kif-export.gif"
+            class="inline-flex rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
+          >
+            Download GIF
+          </a>
+        </div>
+      </dialog>
       <script src="@editor/editor.ts"></script>
       <script src="@editor/controls.ts"></script>
       <script src="@editor/drop.ts"></script>
