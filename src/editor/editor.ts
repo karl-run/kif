@@ -22,6 +22,10 @@ import {
   gifHeightEl,
   gifWidthEl,
   previewStageEl,
+  previewTimelineIndicatorEl,
+  previewTimelineShellEl,
+  previewTimelineSliderEl,
+  previewTimelineThumbnailsEl,
   previewViewportInnerEl,
   stepBackwardButtonEl,
   stepForwardButtonEl,
@@ -36,6 +40,7 @@ const fabricCanvas = new OverlayCanvas(fabricCanvasEl)
 let nodeSync: ReturnType<typeof initializeNodeSync> | null = null
 const touchSelectionQuery =
   typeof window === 'undefined' ? null : window.matchMedia('(pointer: coarse), (hover: none)')
+const TIMELINE_THUMBNAIL_COUNT = 8
 
 if (canvasContext == null) {
   throw new Error('A 2D canvas context is required to preview GIFs.')
@@ -57,6 +62,7 @@ void bootstrapNodeSync()
 
 let previousFileId = store.getState().files.currentFile?.id ?? null
 let shouldResumePreviewAfterExportDialog = false
+let shouldResumePreviewAfterTimelineScrub = false
 let previousPlaybackState = {
   currentPreviewFrameIndex: store.getState().files.currentPreviewFrameIndex,
   currentGifFrameCount: store.getState().files.currentGifFrameCount,
@@ -146,6 +152,34 @@ if (stepForwardButtonEl) {
   })
 }
 
+if (previewTimelineSliderEl) {
+  previewTimelineSliderEl.disabled = true
+  previewTimelineSliderEl.addEventListener('pointerdown', () => {
+    if (previewState.frames.length === 0) {
+      return
+    }
+
+    shouldResumePreviewAfterTimelineScrub = store.getState().files.isPreviewPlaying
+
+    if (shouldResumePreviewAfterTimelineScrub) {
+      store.dispatch(fileSlice.actions.previewPlaying(false))
+    }
+  })
+  previewTimelineSliderEl.addEventListener('input', () => {
+    const frameIndex = Number.parseInt(previewTimelineSliderEl.value, 10)
+
+    if (Number.isNaN(frameIndex)) {
+      return
+    }
+
+    store.dispatch(fileSlice.actions.previewFrameIndex(frameIndex))
+  })
+  previewTimelineSliderEl.addEventListener('change', finishTimelineScrub)
+}
+
+document.addEventListener('pointerup', finishTimelineScrub)
+document.addEventListener('pointercancel', finishTimelineScrub)
+
 store.subscribe(() => {
   const state = store.getState()
   const currentFileId = state.files.currentFile?.id ?? null
@@ -196,9 +230,11 @@ async function syncPreviewToState(): Promise<void> {
   fabricCanvas.setDimensions({ width: decodedGif.width, height: decodedGif.height })
   gifWidthEl.textContent = `${decodedGif.width}px`
   gifHeightEl.textContent = `${decodedGif.height}px`
+  renderTimelineThumbnails()
   syncPreviewScale()
   syncExportAvailability()
   syncPlaybackAvailability()
+  syncTimelineState()
   syncFrameCounter()
 
   renderFrame(0)
@@ -352,6 +388,7 @@ function syncPlaybackFromState(): void {
 
   syncPlaybackAvailability()
   syncFrameCounter()
+  syncTimelineState()
 
   if (currentGifFrameCount === 0 || previewState.frames.length === 0) {
     stopPlayback()
@@ -381,6 +418,83 @@ function syncFrameCounter(): void {
 
 function syncTouchSelectionMode(): void {
   fabricCanvas.selection = !(touchSelectionQuery?.matches ?? false)
+}
+
+function syncTimelineState(): void {
+  const { currentGifFrameCount, currentPreviewFrameIndex } = store.getState().files
+
+  if (!previewTimelineSliderEl || !previewTimelineIndicatorEl || !previewTimelineShellEl) {
+    return
+  }
+
+  previewTimelineShellEl.classList.toggle('opacity-50', currentGifFrameCount === 0)
+  previewTimelineSliderEl.disabled = currentGifFrameCount === 0
+  previewTimelineSliderEl.max = String(Math.max(currentGifFrameCount - 1, 0))
+  previewTimelineSliderEl.value = String(Math.min(currentPreviewFrameIndex, Math.max(currentGifFrameCount - 1, 0)))
+
+  const progress = currentGifFrameCount > 1 ? currentPreviewFrameIndex / (currentGifFrameCount - 1) : 0
+  previewTimelineIndicatorEl.style.left = `${progress * 100}%`
+  previewTimelineIndicatorEl.classList.toggle('hidden', currentGifFrameCount === 0)
+}
+
+function renderTimelineThumbnails(): void {
+  if (!previewTimelineThumbnailsEl) {
+    return
+  }
+
+  previewTimelineThumbnailsEl.textContent = ''
+
+  if (previewState.frames.length === 0) {
+    return
+  }
+
+  const sampleCount = Math.min(TIMELINE_THUMBNAIL_COUNT, previewState.frames.length)
+  const sourceCanvas = document.createElement('canvas')
+  sourceCanvas.width = canvasEl.width
+  sourceCanvas.height = canvasEl.height
+  const sourceContext = sourceCanvas.getContext('2d')
+
+  if (!sourceContext) {
+    return
+  }
+
+  for (let index = 0; index < sampleCount; index += 1) {
+    const thumbnailCanvas = document.createElement('canvas')
+    thumbnailCanvas.width = 96
+    thumbnailCanvas.height = 64
+    thumbnailCanvas.className = 'h-full min-w-0 flex-1 bg-zinc-100'
+
+    const thumbnailContext = thumbnailCanvas.getContext('2d')
+    const frameIndex = sampleCount === 1 ? 0 : Math.round((index / (sampleCount - 1)) * (previewState.frames.length - 1))
+    const frame = previewState.frames[frameIndex]
+
+    if (!thumbnailContext || !frame) {
+      continue
+    }
+
+    sourceContext.putImageData(frame.imageData, 0, 0)
+    thumbnailContext.fillStyle = '#f4f4f5'
+    thumbnailContext.fillRect(0, 0, thumbnailCanvas.width, thumbnailCanvas.height)
+
+    const scale = Math.min(thumbnailCanvas.width / sourceCanvas.width, thumbnailCanvas.height / sourceCanvas.height)
+    const drawWidth = Math.max(1, Math.round(sourceCanvas.width * scale))
+    const drawHeight = Math.max(1, Math.round(sourceCanvas.height * scale))
+    const offsetX = Math.round((thumbnailCanvas.width - drawWidth) / 2)
+    const offsetY = Math.round((thumbnailCanvas.height - drawHeight) / 2)
+
+    thumbnailContext.drawImage(sourceCanvas, offsetX, offsetY, drawWidth, drawHeight)
+    previewTimelineThumbnailsEl.append(thumbnailCanvas)
+  }
+}
+
+function finishTimelineScrub(): void {
+  if (!shouldResumePreviewAfterTimelineScrub || previewState.frames.length === 0) {
+    shouldResumePreviewAfterTimelineScrub = false
+    return
+  }
+
+  shouldResumePreviewAfterTimelineScrub = false
+  store.dispatch(fileSlice.actions.previewPlaying(true))
 }
 
 function syncPreviewScale(): void {

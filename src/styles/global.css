@@ -44,6 +44,44 @@
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
 }
 
+.kif-timeline-slider {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.kif-timeline-slider::-webkit-slider-runnable-track {
+  height: 100%;
+  background: transparent;
+  border: 0;
+}
+
+.kif-timeline-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 1.75rem;
+  border: 2px solid rgb(14 165 233);
+  border-radius: 9999px;
+  background: white;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.16);
+}
+
+.kif-timeline-slider::-moz-range-track {
+  height: 100%;
+  background: transparent;
+  border: 0;
+}
+
+.kif-timeline-slider::-moz-range-thumb {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgb(14 165 233);
+  border-radius: 9999px;
+  background: white;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.16);
+}
+
 dialog[open] {
   position: fixed;
   inset: 50% auto auto 50%;
