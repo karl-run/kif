@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit'
-import { fileSlice } from '@editor/state/fileSlice.ts'
+import { fileSlice } from '@editor/state/file-slice.ts'
 
 export const store = configureStore({
   reducer: {

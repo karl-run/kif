@@ -1,5 +1,7 @@
 import { StaticCanvas, FabricText } from 'fabric'
 
+import { fileSlice } from './state/file-slice.ts'
+import { rememberFile } from './state/file-registry.ts'
 import { store } from './state/redux.ts'
 
 const filePickerShell = document.getElementById('kif-file-picker-shell')
@@ -16,9 +18,17 @@ if (filePickerShell && filePickerInput instanceof HTMLInputElement) {
     filePickerInput.classList.toggle('bg-sky-50', dragging)
   }
 
+  const syncPickedFile = () => {
+    const file = filePickerInput.files?.[0]
+    store.dispatch(fileSlice.actions.file(file ? rememberFile(file) : null))
+  }
+
   filePickerShell.addEventListener('dragenter', () => setDragging(true))
   filePickerShell.addEventListener('dragleave', () => setDragging(false))
-  filePickerShell.addEventListener('drop', () => setDragging(false))
+  filePickerShell.addEventListener('drop', () => {
+    setDragging(false)
+  })
+  filePickerInput.addEventListener('change', syncPickedFile)
 }
 
 console.log(store.getState())
