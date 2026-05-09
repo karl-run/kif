@@ -53,7 +53,10 @@ function createTextNodeId(): string {
   return crypto.randomUUID()
 }
 
-export function createTextNode(overrides: Partial<Omit<TextNode, 'id' | 'type'>> = {}, id = createTextNodeId()): TextNode {
+export function createTextNode(
+  overrides: Partial<Omit<TextNode, 'id' | 'type'>> = {},
+  id = createTextNodeId(),
+): TextNode {
   return {
     angle: 0,
     id,
@@ -124,10 +127,7 @@ export const nodeSlice = createSlice({
 
       state.byId[node.id] = node
     },
-    updateTextNode: (
-      state,
-      action: PayloadAction<{ id: string; changes: Partial<Omit<TextNode, 'id' | 'type'>> }>,
-    ) => {
+    updateTextNode: (state, action: PayloadAction<{ id: string; changes: Partial<Omit<TextNode, 'id' | 'type'>> }>) => {
       const existingNode = state.byId[action.payload.id]
 
       if (!existingNode || existingNode.type !== 'text') {

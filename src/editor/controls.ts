@@ -1,6 +1,13 @@
 import { addPictureNodeButtonEl, addTextNodeButtonEl, overlayNodeControlsEl } from './nodes.ts'
 import { selectCanvasNode } from './fabric-node-sync.ts'
-import { createPictureNode, createTextNode, nodeSlice, type EditorNode, type PictureNode, type TextNode } from './state/node-slice.ts'
+import {
+  createPictureNode,
+  createTextNode,
+  nodeSlice,
+  type EditorNode,
+  type PictureNode,
+  type TextNode,
+} from './state/node-slice.ts'
 import { store } from './state/redux.ts'
 
 type RangeHandle = 'start' | 'end'
@@ -8,13 +15,11 @@ type RangeHandle = 'start' | 'end'
 const nodeControlRows = new Map<string, HTMLDivElement>()
 let previousNodes = store.getState().nodes
 let previousFrameCount = store.getState().files.currentGifFrameCount
-let activeRangeDrag:
-  | {
-      handle: RangeHandle
-      nodeId: string
-      sliderShell: HTMLDivElement
-    }
-  | null = null
+let activeRangeDrag: {
+  handle: RangeHandle
+  nodeId: string
+  sliderShell: HTMLDivElement
+} | null = null
 
 document.addEventListener('pointermove', (event) => {
   if (!activeRangeDrag) {
@@ -465,7 +470,12 @@ function beginRangeDrag(nodeId: string, handle: RangeHandle, sliderShell: HTMLDi
   updateRangeFromPointer(nodeId, handle, sliderShell, event.clientX)
 }
 
-function updateRangeFromPointer(nodeId: string, handle: RangeHandle, sliderShell: HTMLDivElement, clientX: number): void {
+function updateRangeFromPointer(
+  nodeId: string,
+  handle: RangeHandle,
+  sliderShell: HTMLDivElement,
+  clientX: number,
+): void {
   const node = getNode(nodeId)
 
   if (!node) {

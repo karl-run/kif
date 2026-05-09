@@ -38,8 +38,7 @@ import { initializeNodeSync } from './fabric-node-sync.ts'
 const canvasContext = canvasEl.getContext('2d', { willReadFrequently: true })!
 const fabricCanvas = new OverlayCanvas(fabricCanvasEl)
 let nodeSync: ReturnType<typeof initializeNodeSync> | null = null
-const touchSelectionQuery =
-  typeof window === 'undefined' ? null : window.matchMedia('(pointer: coarse), (hover: none)')
+const touchSelectionQuery = typeof window === 'undefined' ? null : window.matchMedia('(pointer: coarse), (hover: none)')
 const TIMELINE_THUMBNAIL_COUNT = 8
 
 if (canvasContext == null) {
@@ -338,7 +337,9 @@ function exportGifToDialog(): void {
 
   exportGifButtonEl.disabled = true
   const exportedGif = exportGif(previewState.frames, canvasEl.width, canvasEl.height, (frameIndex) =>
-    nodeSync ? nodeSync.toCanvasElementForFrame(frameIndex, previewState.frames.length) : fabricCanvas.toCanvasElement(),
+    nodeSync
+      ? nodeSync.toCanvasElementForFrame(frameIndex, previewState.frames.length)
+      : fabricCanvas.toCanvasElement(),
   )
   const exportedGifUrl = URL.createObjectURL(exportedGif)
 
@@ -472,7 +473,8 @@ function renderTimelineThumbnails(): void {
     thumbnailCanvas.className = 'h-full min-w-0 flex-1 bg-zinc-100'
 
     const thumbnailContext = thumbnailCanvas.getContext('2d')
-    const frameIndex = sampleCount === 1 ? 0 : Math.round((index / (sampleCount - 1)) * (previewState.frames.length - 1))
+    const frameIndex =
+      sampleCount === 1 ? 0 : Math.round((index / (sampleCount - 1)) * (previewState.frames.length - 1))
     const frame = previewState.frames[frameIndex]
 
     if (!thumbnailContext || !frame) {

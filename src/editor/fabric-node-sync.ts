@@ -361,7 +361,9 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
     for (const [nodeId, object] of fabricNodes) {
       const node = byId[nodeId]
 
-      object.visible = Boolean(node && isNodeVisibleAtFrame(node, frameContext) && (node.type !== 'picture' || node.src))
+      object.visible = Boolean(
+        node && isNodeVisibleAtFrame(node, frameContext) && (node.type !== 'picture' || node.src),
+      )
       object.setCoords()
     }
   }
