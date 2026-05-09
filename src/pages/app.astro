@@ -12,10 +12,10 @@ import '../styles/global.css'
     <title>Kif</title>
   </head>
   <body>
-    <main>
+    <main class="mx-auto flex w-full max-w-[800px] flex-col gap-6 px-4 py-6 sm:px-6">
       <h1 class="text-3xl font-semibold tracking-tight">Kif - Annotate gif memes</h1>
 
-      <div id="kif-file-picker-shell" class="relative block max-w-prose">
+      <div id="kif-file-picker-shell" class="relative block w-full">
         <div class="pointer-events-none absolute inset-x-6 top-6 space-y-1">
           <label for="kif-file-picker" class="block text-lg font-medium text-zinc-900"> Click to choose a GIF </label>
           <p class="text-sm text-zinc-600">Or drop one here.</p>
@@ -29,10 +29,21 @@ import '../styles/global.css'
         />
       </div>
 
-      <div class="border h-150 w-200 bg-red-50 flex items-center justify-center">
-        <div id="canvas-stack" class="relative">
-          <canvas id="da-canvas" class="bg-blue-50" width="300" height="300"> </canvas>
-          <canvas id="fabric-canvas" class="absolute inset-0" width="300" height="300"> </canvas>
+      <div class="w-full overflow-x-auto rounded-2xl border border-zinc-200 bg-zinc-50">
+        <div class="inline-flex min-h-80 min-w-full items-center justify-center p-4 sm:p-6">
+          <div id="canvas-stack" class="relative shrink-0">
+            <div
+              id="gif-width"
+              class="pointer-events-none absolute inset-x-0 -top-4 flex justify-center text-xs font-medium text-zinc-500"
+            ></div>
+            <div
+              id="gif-height"
+              class="pointer-events-none absolute left-full top-1/2 -translate-x-2 -translate-y-1/2 rotate-90 whitespace-nowrap text-xs font-medium text-zinc-500"
+            ></div>
+            <canvas id="da-canvas" class="block border border-zinc-200 bg-white shadow-sm" width="240" height="240">
+            </canvas>
+            <canvas id="fabric-canvas" class="absolute inset-0" width="240" height="240"> </canvas>
+          </div>
         </div>
       </div>
       <script src="@editor/editor.ts"></script>

@@ -7,7 +7,7 @@ import type { GifFrame } from '@gif/types.ts'
 import { getFile, rememberFile } from './state/file-registry.ts'
 import { fileSlice } from './state/file-slice.ts'
 import { store } from './state/redux.ts'
-import { canvasEl, fabricCanvasEl, filePickerInput, filePickerShell } from '@editor/nodes.ts'
+import { canvasEl, fabricCanvasEl, filePickerInput, filePickerShell, gifHeightEl, gifWidthEl } from '@editor/nodes.ts'
 
 const canvasContext = canvasEl.getContext('2d', { willReadFrequently: true })!
 const fabricCanvas = new StaticCanvas(fabricCanvasEl)
@@ -88,6 +88,8 @@ async function syncPreviewToState(): Promise<void> {
   canvasEl.width = decodedGif.width
   canvasEl.height = decodedGif.height
   fabricCanvas.setDimensions({ width: decodedGif.width, height: decodedGif.height })
+  gifWidthEl.textContent = `${decodedGif.width}px`
+  gifHeightEl.textContent = `${decodedGif.height}px`
 
   renderFrame(0)
   renderExportPreview()
