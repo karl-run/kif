@@ -17,6 +17,9 @@ import {
   filePickerShell,
   gifHeightEl,
   gifWidthEl,
+  stepBackwardButtonEl,
+  stepForwardButtonEl,
+  togglePlaybackButtonEl,
 } from './nodes.ts'
 import { OverlayCanvas } from './fabric-canvas.ts'
 import { waitForImpactFont } from './fonts.ts'
@@ -32,13 +35,11 @@ if (canvasContext == null) {
 
 const previewState: {
   currentFileId: string | null
-  currentFrameIndex: number
   frames: GifFrame[]
   exportedGifUrl: string | null
   playbackTimer: number | null
 } = {
   currentFileId: null,
-  currentFrameIndex: 0,
   exportedGifUrl: null,
   frames: [],
   playbackTimer: null,
@@ -47,6 +48,11 @@ const previewState: {
 void bootstrapNodeSync()
 
 let previousFileId = store.getState().files.currentFile?.id ?? null
+let previousPlaybackState = {
+  currentPreviewFrameIndex: store.getState().files.currentPreviewFrameIndex,
+  currentGifFrameCount: store.getState().files.currentGifFrameCount,
+  isPreviewPlaying: store.getState().files.isPreviewPlaying,
+}
 
 if (filePickerShell && filePickerInput instanceof HTMLInputElement) {
   const setDragging = (dragging: boolean) => {
@@ -74,6 +80,27 @@ if (exportGifButtonEl && exportedGifDialogEl && exportedGifImageEl && exportedGi
   })
 }
 
+if (togglePlaybackButtonEl) {
+  togglePlaybackButtonEl.disabled = true
+  togglePlaybackButtonEl.addEventListener('click', () => {
+    togglePlayback()
+  })
+}
+
+if (stepBackwardButtonEl) {
+  stepBackwardButtonEl.disabled = true
+  stepBackwardButtonEl.addEventListener('click', () => {
+    stepFrame(-1)
+  })
+}
+
+if (stepForwardButtonEl) {
+  stepForwardButtonEl.disabled = true
+  stepForwardButtonEl.addEventListener('click', () => {
+    stepFrame(1)
+  })
+}
+
 store.subscribe(() => {
   const state = store.getState()
   const currentFileId = state.files.currentFile?.id ?? null
@@ -81,6 +108,19 @@ store.subscribe(() => {
   if (currentFileId !== previousFileId) {
     previousFileId = currentFileId
     void syncPreviewToState()
+  }
+
+  if (
+    state.files.currentPreviewFrameIndex !== previousPlaybackState.currentPreviewFrameIndex ||
+    state.files.currentGifFrameCount !== previousPlaybackState.currentGifFrameCount ||
+    state.files.isPreviewPlaying !== previousPlaybackState.isPreviewPlaying
+  ) {
+    previousPlaybackState = {
+      currentPreviewFrameIndex: state.files.currentPreviewFrameIndex,
+      currentGifFrameCount: state.files.currentGifFrameCount,
+      isPreviewPlaying: state.files.isPreviewPlaying,
+    }
+    syncPlaybackFromState()
   }
 })
 
@@ -101,9 +141,10 @@ async function syncPreviewToState(): Promise<void> {
 
   stopPlayback()
   previewState.currentFileId = currentFileRef.id
-  previewState.currentFrameIndex = 0
   previewState.frames = decodedGif.frames
   store.dispatch(fileSlice.actions.gifFrameCount(decodedGif.frames.length))
+  store.dispatch(fileSlice.actions.previewFrameIndex(0))
+  store.dispatch(fileSlice.actions.previewPlaying(true))
 
   canvasEl.width = decodedGif.width
   canvasEl.height = decodedGif.height
@@ -111,9 +152,9 @@ async function syncPreviewToState(): Promise<void> {
   gifWidthEl.textContent = `${decodedGif.width}px`
   gifHeightEl.textContent = `${decodedGif.height}px`
   syncExportAvailability()
+  syncPlaybackAvailability()
 
   renderFrame(0)
-  scheduleNextFrame()
 }
 
 function renderFrame(frameIndex: number): void {
@@ -124,21 +165,30 @@ function renderFrame(frameIndex: number): void {
   }
 
   canvasContext.putImageData(frame.imageData, 0, 0)
-  previewState.currentFrameIndex = frameIndex
   nodeSync?.renderFrame(frameIndex, previewState.frames.length)
 }
 
 function scheduleNextFrame(): void {
-  const currentFrame = previewState.frames[previewState.currentFrameIndex]
+  if (!store.getState().files.isPreviewPlaying || previewState.playbackTimer !== null) {
+    return
+  }
+
+  const currentFrameIndex = store.getState().files.currentPreviewFrameIndex
+  const currentFrame = previewState.frames[currentFrameIndex]
 
   if (!currentFrame) {
     return
   }
 
   previewState.playbackTimer = window.setTimeout(() => {
-    const nextFrameIndex = (previewState.currentFrameIndex + 1) % previewState.frames.length
-    renderFrame(nextFrameIndex)
-    scheduleNextFrame()
+    previewState.playbackTimer = null
+
+    if (!store.getState().files.isPreviewPlaying || previewState.frames.length === 0) {
+      return
+    }
+
+    const nextFrameIndex = (store.getState().files.currentPreviewFrameIndex + 1) % previewState.frames.length
+    store.dispatch(fileSlice.actions.previewFrameIndex(nextFrameIndex))
   }, normalizeDelay(currentFrame.delay))
 }
 
@@ -147,6 +197,24 @@ function stopPlayback(): void {
     window.clearTimeout(previewState.playbackTimer)
     previewState.playbackTimer = null
   }
+}
+
+function togglePlayback(): void {
+  if (previewState.frames.length === 0) {
+    return
+  }
+
+  store.dispatch(fileSlice.actions.previewPlaying(!store.getState().files.isPreviewPlaying))
+}
+
+function stepFrame(direction: -1 | 1): void {
+  if (previewState.frames.length === 0) {
+    return
+  }
+
+  const currentFrameIndex = store.getState().files.currentPreviewFrameIndex
+  const nextFrameIndex = (currentFrameIndex + direction + previewState.frames.length) % previewState.frames.length
+  store.dispatch(fileSlice.actions.previewFrameIndex(nextFrameIndex))
 }
 
 function normalizeDelay(delay: number): number {
@@ -192,7 +260,7 @@ function exportGifToDialog(): void {
   exportedGifImageEl.src = exportedGifUrl
   exportedGifDownloadEl.href = exportedGifUrl
   exportedGifDialogEl.showModal()
-  nodeSync?.renderFrame(previewState.currentFrameIndex, previewState.frames.length)
+  nodeSync?.renderFrame(store.getState().files.currentPreviewFrameIndex, previewState.frames.length)
   syncExportAvailability()
 }
 
@@ -202,4 +270,44 @@ function syncExportAvailability(): void {
   }
 
   exportGifButtonEl.disabled = previewState.frames.length === 0
+}
+
+function syncPlaybackAvailability(): void {
+  const { currentGifFrameCount, isPreviewPlaying } = store.getState().files
+
+  if (!togglePlaybackButtonEl) {
+    return
+  }
+
+  togglePlaybackButtonEl.disabled = currentGifFrameCount === 0
+  togglePlaybackButtonEl.textContent = isPreviewPlaying ? '❚❚' : '▶'
+  togglePlaybackButtonEl.setAttribute('aria-label', isPreviewPlaying ? 'Pause preview' : 'Play preview')
+
+  if (stepBackwardButtonEl) {
+    stepBackwardButtonEl.disabled = currentGifFrameCount === 0
+  }
+
+  if (stepForwardButtonEl) {
+    stepForwardButtonEl.disabled = currentGifFrameCount === 0
+  }
+}
+
+function syncPlaybackFromState(): void {
+  const { currentGifFrameCount, currentPreviewFrameIndex, isPreviewPlaying } = store.getState().files
+
+  syncPlaybackAvailability()
+
+  if (currentGifFrameCount === 0 || previewState.frames.length === 0) {
+    stopPlayback()
+    return
+  }
+
+  renderFrame(currentPreviewFrameIndex)
+
+  if (!isPreviewPlaying) {
+    stopPlayback()
+    return
+  }
+
+  scheduleNextFrame()
 }

@@ -30,7 +30,33 @@ import '../styles/global.css'
       </div>
 
       <div class="w-full overflow-x-auto rounded-2xl border border-zinc-200 bg-zinc-50">
-        <div class="inline-flex min-h-80 min-w-full items-center justify-center p-4 sm:p-6">
+        <div class="relative inline-flex min-h-80 min-w-full items-center justify-center p-4 sm:p-6">
+          <div class="absolute left-4 top-4 z-20 flex flex-wrap gap-1.5">
+            <button
+              id="toggle-playback-button"
+              type="button"
+              aria-label="Pause preview"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-200 bg-white/95 text-sm leading-none text-sky-700 shadow-sm backdrop-blur-sm transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400"
+            >
+              <span class="-translate-y-px">❚❚</span>
+            </button>
+            <button
+              id="step-backward-button"
+              type="button"
+              aria-label="Previous frame"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400"
+            >
+              <span class="-translate-y-px">◀</span>
+            </button>
+            <button
+              id="step-forward-button"
+              type="button"
+              aria-label="Next frame"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400"
+            >
+              <span class="-translate-y-px">▶</span>
+            </button>
+          </div>
           <div id="canvas-stack" class="relative shrink-0">
             <div
               id="gif-width"
@@ -84,7 +110,7 @@ import '../styles/global.css'
               </button>
             </form>
           </div>
-          <img id="exported-gif-image" alt="Exported GIF preview" class="mx-auto max-h-[70vh] max-w-full rounded-xl border border-zinc-200 bg-zinc-50" />
+          <img id="exported-gif-image" alt="Exported GIF preview" class="mx-auto max-h-[70vh] max-w-full border border-zinc-200 bg-zinc-50" />
           <a
             id="exported-gif-download"
             download="kif-export.gif"
