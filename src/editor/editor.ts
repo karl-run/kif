@@ -51,6 +51,7 @@ const previewState: {
 void bootstrapNodeSync()
 
 let previousFileId = store.getState().files.currentFile?.id ?? null
+let shouldResumePreviewAfterExportDialog = false
 let previousPlaybackState = {
   currentPreviewFrameIndex: store.getState().files.currentPreviewFrameIndex,
   currentGifFrameCount: store.getState().files.currentGifFrameCount,
@@ -80,6 +81,15 @@ if (exportGifButtonEl && exportedGifDialogEl && exportedGifImageEl && exportedGi
   exportGifButtonEl.disabled = true
   exportGifButtonEl.addEventListener('click', () => {
     exportGifToDialog()
+  })
+  exportedGifDialogEl.addEventListener('close', () => {
+    if (!shouldResumePreviewAfterExportDialog || previewState.frames.length === 0) {
+      shouldResumePreviewAfterExportDialog = false
+      return
+    }
+
+    shouldResumePreviewAfterExportDialog = false
+    store.dispatch(fileSlice.actions.previewPlaying(true))
   })
 }
 
@@ -248,6 +258,13 @@ function exportGifToDialog(): void {
     !exportGifButtonEl
   ) {
     return
+  }
+
+  const wasPreviewPlaying = store.getState().files.isPreviewPlaying
+  shouldResumePreviewAfterExportDialog = wasPreviewPlaying
+
+  if (wasPreviewPlaying) {
+    store.dispatch(fileSlice.actions.previewPlaying(false))
   }
 
   exportGifButtonEl.disabled = true
