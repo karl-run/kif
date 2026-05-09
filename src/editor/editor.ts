@@ -8,6 +8,7 @@ import { store } from './state/redux.ts'
 
 import {
   canvasEl,
+  canvasStackShellEl,
   exportGifButtonEl,
   exportedGifDialogEl,
   exportedGifDownloadEl,
@@ -20,6 +21,8 @@ import {
   gifFrameCounterEl,
   gifHeightEl,
   gifWidthEl,
+  previewStageEl,
+  previewViewportInnerEl,
   stepBackwardButtonEl,
   stepForwardButtonEl,
   togglePlaybackButtonEl,
@@ -57,6 +60,16 @@ let previousPlaybackState = {
   currentGifFrameCount: store.getState().files.currentGifFrameCount,
   isPreviewPlaying: store.getState().files.isPreviewPlaying,
 }
+const previewScaleObserver =
+  typeof ResizeObserver === 'undefined'
+    ? null
+    : new ResizeObserver(() => {
+        syncPreviewScale()
+      })
+
+previewScaleObserver?.observe(previewViewportInnerEl)
+previewScaleObserver?.observe(canvasStackShellEl)
+syncPreviewScale()
 
 if (filePickerShell && filePickerInput instanceof HTMLInputElement) {
   const setDragging = (dragging: boolean) => {
@@ -164,6 +177,7 @@ async function syncPreviewToState(): Promise<void> {
   fabricCanvas.setDimensions({ width: decodedGif.width, height: decodedGif.height })
   gifWidthEl.textContent = `${decodedGif.width}px`
   gifHeightEl.textContent = `${decodedGif.height}px`
+  syncPreviewScale()
   syncExportAvailability()
   syncPlaybackAvailability()
   syncFrameCounter()
@@ -344,4 +358,24 @@ function syncFrameCounter(): void {
 
   gifFrameCounterEl.textContent =
     currentGifFrameCount > 0 ? `Frame ${currentPreviewFrameIndex + 1}/${currentGifFrameCount}` : ''
+}
+
+function syncPreviewScale(): void {
+  if (!previewViewportInnerEl || !previewStageEl || !canvasStackShellEl) {
+    return
+  }
+
+  const naturalWidth = canvasStackShellEl.offsetWidth
+  const naturalHeight = canvasStackShellEl.offsetHeight
+
+  if (naturalWidth === 0 || naturalHeight === 0) {
+    return
+  }
+
+  const availableWidth = previewViewportInnerEl.clientWidth
+  const scale = availableWidth > 0 ? Math.min(1, availableWidth / naturalWidth) : 1
+
+  previewStageEl.style.width = `${Math.round(naturalWidth * scale)}px`
+  previewStageEl.style.height = `${Math.round(naturalHeight * scale)}px`
+  canvasStackShellEl.style.transform = `scale(${scale})`
 }

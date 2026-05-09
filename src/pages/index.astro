@@ -49,8 +49,8 @@ const pageDescription =
         />
       </div>
 
-      <div class="w-full overflow-x-auto rounded-2xl border border-zinc-200 bg-zinc-50">
-        <div class="relative inline-flex min-h-80 min-w-full items-center justify-center p-4 sm:p-6">
+      <div id="preview-viewport" class="w-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
+        <div id="preview-viewport-inner" class="relative flex min-h-80 w-full items-center justify-center p-4 sm:p-6">
           <div class="absolute left-4 top-4 z-20 flex flex-wrap gap-1.5">
             <button
               id="toggle-playback-button"
@@ -86,25 +86,29 @@ const pageDescription =
               </span>
             </button>
           </div>
-          <div id="canvas-stack" class="relative shrink-0">
-            <div
-              id="gif-width"
-              class="pointer-events-none absolute inset-x-0 -top-4 flex justify-center text-xs font-medium text-zinc-500"
-            >
+          <div id="preview-stage" class="relative">
+            <div id="canvas-stack-shell" class="inline-block origin-top-left pt-4 pr-6 pb-5">
+              <div id="canvas-stack" class="relative shrink-0">
+                <div
+                  id="gif-width"
+                  class="pointer-events-none absolute inset-x-0 -top-4 flex justify-center text-xs font-medium text-zinc-500"
+                >
+                </div>
+                <div
+                  id="gif-height"
+                  class="pointer-events-none absolute left-full top-1/2 -translate-x-2 -translate-y-1/2 rotate-90 whitespace-nowrap text-xs font-medium text-zinc-500"
+                >
+                </div>
+                <div
+                  id="gif-frame-counter"
+                  class="pointer-events-none absolute inset-x-0 -bottom-5 flex justify-center text-xs font-medium text-zinc-500"
+                >
+                </div>
+                <canvas id="da-canvas" class="block border border-zinc-200 bg-white shadow-sm" width="240" height="240"
+                ></canvas>
+                <canvas id="fabric-canvas" class="absolute inset-0" width="240" height="240"></canvas>
+              </div>
             </div>
-            <div
-              id="gif-height"
-              class="pointer-events-none absolute left-full top-1/2 -translate-x-2 -translate-y-1/2 rotate-90 whitespace-nowrap text-xs font-medium text-zinc-500"
-            >
-            </div>
-            <div
-              id="gif-frame-counter"
-              class="pointer-events-none absolute inset-x-0 -bottom-5 flex justify-center text-xs font-medium text-zinc-500"
-            >
-            </div>
-            <canvas id="da-canvas" class="block border border-zinc-200 bg-white shadow-sm" width="240" height="240"
-            ></canvas>
-            <canvas id="fabric-canvas" class="absolute inset-0" width="240" height="240"></canvas>
           </div>
         </div>
       </div>
