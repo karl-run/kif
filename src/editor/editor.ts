@@ -49,11 +49,13 @@ const previewState: {
   currentFileId: string | null
   frames: GifFrame[]
   exportedGifUrl: string | null
+  syncRequestId: number
   playbackTimer: number | null
 } = {
   currentFileId: null,
   exportedGifUrl: null,
   frames: [],
+  syncRequestId: 0,
   playbackTimer: null,
 }
 
@@ -81,6 +83,8 @@ syncPreviewScale()
 touchSelectionQuery?.addEventListener?.('change', syncTouchSelectionMode)
 
 if (filePickerShell && filePickerInput instanceof HTMLInputElement) {
+  let remainingRestoreAttempts = 8
+
   const setDragging = (dragging: boolean) => {
     filePickerInput.classList.toggle('border-sky-400', dragging)
     filePickerInput.classList.toggle('bg-sky-50', dragging)
@@ -101,6 +105,16 @@ if (filePickerShell && filePickerInput instanceof HTMLInputElement) {
   const restorePickedFile = () => {
     window.requestAnimationFrame(() => {
       syncPickedFile()
+
+      const currentFileId = store.getState().files.currentFile?.id ?? null
+      const restoredInputFile = filePickerInput.files?.[0] ?? null
+      const needsAnotherRestoreAttempt =
+        currentFileId !== null && previewState.currentFileId !== currentFileId && restoredInputFile === null
+
+      if (needsAnotherRestoreAttempt && remainingRestoreAttempts > 0) {
+        remainingRestoreAttempts -= 1
+        window.setTimeout(restorePickedFile, 150)
+      }
     })
   }
 
@@ -113,6 +127,8 @@ if (filePickerShell && filePickerInput instanceof HTMLInputElement) {
   window.addEventListener('pageshow', restorePickedFile)
   restorePickedFile()
 }
+
+void syncPreviewToState()
 
 if (exportGifButtonEl && exportedGifDialogEl && exportedGifImageEl && exportedGifDownloadEl) {
   exportGifButtonEl.disabled = true
@@ -209,6 +225,9 @@ async function syncPreviewToState(): Promise<void> {
     return
   }
 
+  const syncRequestId = previewState.syncRequestId + 1
+  previewState.syncRequestId = syncRequestId
+
   const file = getFile(currentFileRef.id)
 
   if (!file) {
@@ -216,6 +235,13 @@ async function syncPreviewToState(): Promise<void> {
   }
 
   const decodedGif = await decodeGif(file)
+
+  if (
+    previewState.syncRequestId !== syncRequestId ||
+    store.getState().files.currentFile?.id !== currentFileRef.id
+  ) {
+    return
+  }
 
   stopPlayback()
   previewState.currentFileId = currentFileRef.id
@@ -237,6 +263,7 @@ async function syncPreviewToState(): Promise<void> {
   syncFrameCounter()
 
   renderFrame(0)
+  syncPlaybackFromState()
 }
 
 function renderFrame(frameIndex: number): void {
