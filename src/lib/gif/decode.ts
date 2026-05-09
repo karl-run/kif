@@ -1,9 +1,6 @@
-import { decompressFrames, parseGIF, type ParsedFrame } from 'gifuct-js'
+import { decompressFrames, type ParsedFrame, parseGIF } from 'gifuct-js'
 
-export type GifFrame = {
-  delay: number
-  imageData: ImageData
-}
+import type { GifFrame } from './types.ts'
 
 type DecodedGif = {
   frames: GifFrame[]
@@ -51,7 +48,7 @@ export async function decodeGif(file: File): Promise<DecodedGif> {
     )
 
     decodedFrames.push({
-      delay: frame.delay,
+      delay: normalizeDelay(frame.delay),
       imageData: workingContext.getImageData(0, 0, width, height),
     })
 
@@ -65,4 +62,12 @@ export async function decodeGif(file: File): Promise<DecodedGif> {
     height,
     frames: decodedFrames,
   }
+}
+
+function normalizeDelay(delay: number): number {
+  if (delay <= 0) {
+    return 100
+  }
+
+  return Math.max(delay, 20)
 }
