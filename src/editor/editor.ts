@@ -15,6 +15,7 @@ import {
   fabricCanvasEl,
   filePickerInput,
   filePickerShell,
+  gifFrameCounterEl,
   gifHeightEl,
   gifWidthEl,
   stepBackwardButtonEl,
@@ -153,6 +154,7 @@ async function syncPreviewToState(): Promise<void> {
   gifHeightEl.textContent = `${decodedGif.height}px`
   syncExportAvailability()
   syncPlaybackAvailability()
+  syncFrameCounter()
 
   renderFrame(0)
 }
@@ -296,6 +298,7 @@ function syncPlaybackFromState(): void {
   const { currentGifFrameCount, currentPreviewFrameIndex, isPreviewPlaying } = store.getState().files
 
   syncPlaybackAvailability()
+  syncFrameCounter()
 
   if (currentGifFrameCount === 0 || previewState.frames.length === 0) {
     stopPlayback()
@@ -310,4 +313,15 @@ function syncPlaybackFromState(): void {
   }
 
   scheduleNextFrame()
+}
+
+function syncFrameCounter(): void {
+  if (!gifFrameCounterEl) {
+    return
+  }
+
+  const { currentGifFrameCount, currentPreviewFrameIndex } = store.getState().files
+
+  gifFrameCounterEl.textContent =
+    currentGifFrameCount > 0 ? `Frame ${currentPreviewFrameIndex + 1}/${currentGifFrameCount}` : ''
 }
