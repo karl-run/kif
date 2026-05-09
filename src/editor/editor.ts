@@ -83,7 +83,14 @@ if (filePickerShell && filePickerInput instanceof HTMLInputElement) {
 
   const syncPickedFile = () => {
     const file = filePickerInput.files?.[0]
-    store.dispatch(fileSlice.actions.file(file ? rememberFile(file) : null))
+    const fileRef = file ? rememberFile(file) : null
+
+    if (fileRef && store.getState().files.currentFile?.id === fileRef.id) {
+      void syncPreviewToState()
+      return
+    }
+
+    store.dispatch(fileSlice.actions.file(fileRef))
   }
 
   const restorePickedFile = () => {
