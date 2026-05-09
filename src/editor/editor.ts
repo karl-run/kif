@@ -1,5 +1,3 @@
-import { FabricText, StaticCanvas } from 'fabric'
-
 import { exportGif } from '@gif/export.ts'
 import { decodeGif } from '@gif/decode.ts'
 import type { GifFrame } from '@gif/types.ts'
@@ -7,26 +5,17 @@ import type { GifFrame } from '@gif/types.ts'
 import { getFile, rememberFile } from './state/file-registry.ts'
 import { fileSlice } from './state/file-slice.ts'
 import { store } from './state/redux.ts'
-import { canvasEl, fabricCanvasEl, filePickerInput, filePickerShell, gifHeightEl, gifWidthEl } from '@editor/nodes.ts'
+
+import { canvasEl, fabricCanvasEl, filePickerInput, filePickerShell, gifHeightEl, gifWidthEl } from './nodes.ts'
+import { OverlayCanvas } from './fabric-canvas.ts'
+import { initializeNodeSync } from './node-sync.ts'
 
 const canvasContext = canvasEl.getContext('2d', { willReadFrequently: true })!
-const fabricCanvas = new StaticCanvas(fabricCanvasEl)
+const fabricCanvas = new OverlayCanvas(fabricCanvasEl)
 
 if (canvasContext == null) {
   throw new Error('A 2D canvas context is required to preview GIFs.')
 }
-
-const overlayText = new FabricText('Hello world!', {
-  fill: 'white',
-  fontSize: 40,
-  left: 24,
-  stroke: 'black',
-  strokeWidth: 2,
-  top: 24,
-})
-
-fabricCanvas.add(overlayText)
-fabricCanvas.renderAll()
 
 const previewState: {
   currentFileId: string | null
@@ -41,6 +30,18 @@ const previewState: {
   frames: [],
   playbackTimer: null,
 }
+
+initializeNodeSync({
+  fabricCanvas,
+  onNodesRendered: () => {
+    if (previewState.frames.length > 0) {
+      renderExportPreview()
+    }
+  },
+  store,
+})
+
+let previousFileId = store.getState().files.currentFile?.id ?? null
 
 if (filePickerShell && filePickerInput instanceof HTMLInputElement) {
   const setDragging = (dragging: boolean) => {
@@ -62,7 +63,13 @@ if (filePickerShell && filePickerInput instanceof HTMLInputElement) {
 }
 
 store.subscribe(() => {
-  void syncPreviewToState()
+  const state = store.getState()
+  const currentFileId = state.files.currentFile?.id ?? null
+
+  if (currentFileId !== previousFileId) {
+    previousFileId = currentFileId
+    void syncPreviewToState()
+  }
 })
 
 async function syncPreviewToState(): Promise<void> {
