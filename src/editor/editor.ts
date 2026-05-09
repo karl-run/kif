@@ -1,3 +1,5 @@
+import { FabricText, StaticCanvas } from 'fabric'
+
 import { fileSlice } from './state/file-slice.ts'
 import { getFile, rememberFile } from './state/file-registry.ts'
 import { store } from './state/redux.ts'
@@ -6,11 +8,25 @@ import { decodeGif, type GifFrame } from './gif.ts'
 const filePickerShell = document.getElementById('kif-file-picker-shell')
 const filePickerInput = document.getElementById('kif-file-picker')
 const canvasEl = document.getElementById('da-canvas') as HTMLCanvasElement
+const fabricCanvasEl = document.getElementById('fabric-canvas') as HTMLCanvasElement
 const canvasContext = canvasEl.getContext('2d', { willReadFrequently: true })!
+const fabricCanvas = new StaticCanvas(fabricCanvasEl)
 
 if (canvasContext == null) {
   throw new Error('A 2D canvas context is required to preview GIFs.')
 }
+
+const overlayText = new FabricText('Hello world!', {
+  fill: 'white',
+  fontSize: 40,
+  left: 24,
+  stroke: 'black',
+  strokeWidth: 2,
+  top: 24,
+})
+
+fabricCanvas.add(overlayText)
+fabricCanvas.renderAll()
 
 const previewState: {
   currentFileId: string | null
@@ -69,6 +85,7 @@ async function syncPreviewToState(): Promise<void> {
 
   canvasEl.width = decodedGif.width
   canvasEl.height = decodedGif.height
+  fabricCanvas.setDimensions({ width: decodedGif.width, height: decodedGif.height })
 
   renderFrame(0)
   scheduleNextFrame()

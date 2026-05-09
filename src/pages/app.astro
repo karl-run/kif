@@ -30,7 +30,10 @@ import '../styles/global.css'
       </div>
 
       <div class="border h-150 w-200 bg-red-50 flex items-center justify-center">
-        <canvas id="da-canvas" class="bg-blue-50" width="300" height="300"> </canvas>
+        <div id="canvas-stack" class="relative">
+          <canvas id="da-canvas" class="bg-blue-50" width="300" height="300"> </canvas>
+          <canvas id="fabric-canvas" class="absolute inset-0" width="300" height="300"> </canvas>
+        </div>
       </div>
       <script src="@editor/editor.ts"></script>
       <script src="@editor/stop-global-drop.ts"></script>
