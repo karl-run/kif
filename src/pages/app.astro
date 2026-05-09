@@ -1,12 +1,5 @@
 ---
 import '../styles/global.css'
-
-import { StaticCanvas, FabricText } from 'fabric'
-
-const canvas = new StaticCanvas()
-const helloWorld = new FabricText('Hello world!')
-canvas.add(helloWorld)
-canvas.centerObject(helloWorld)
 ---
 
 <html lang="en">
@@ -20,6 +13,8 @@ canvas.centerObject(helloWorld)
   </head>
   <body>
     <h1>app</h1>
-    <canvas></canvas>
+    <canvas id="da-canvas" class="bg-red-50" width="800" height="600"> </canvas>
+
+    <script src="../editor/editor.ts"></script>
   </body>
 </html>
