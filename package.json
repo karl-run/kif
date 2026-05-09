@@ -13,6 +13,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.11.2",
     "fabric": "^7.3.1",
     "gifenc": "^1.0.3",
     "gifuct-js": "^2.1.2"

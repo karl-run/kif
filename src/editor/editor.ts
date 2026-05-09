@@ -1,5 +1,7 @@
 import { StaticCanvas, FabricText } from 'fabric'
 
+import { store } from './state/redux.ts'
+
 const filePickerShell = document.getElementById('kif-file-picker-shell')
 const filePickerInput = document.getElementById('kif-file-picker')
 const canvasEl = document.getElementById('da-canvas') as HTMLCanvasElement
@@ -18,3 +20,5 @@ if (filePickerShell && filePickerInput instanceof HTMLInputElement) {
   filePickerShell.addEventListener('dragleave', () => setDragging(false))
   filePickerShell.addEventListener('drop', () => setDragging(false))
 }
+
+console.log(store.getState())
