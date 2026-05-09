@@ -18,6 +18,7 @@ import {
   filePickerShell,
   playbackIconPauseEl,
   playbackIconPlayEl,
+  previewTimelineHandleEl,
   gifFrameCounterEl,
   gifHeightEl,
   gifWidthEl,
@@ -236,10 +237,7 @@ async function syncPreviewToState(): Promise<void> {
 
   const decodedGif = await decodeGif(file)
 
-  if (
-    previewState.syncRequestId !== syncRequestId ||
-    store.getState().files.currentFile?.id !== currentFileRef.id
-  ) {
+  if (previewState.syncRequestId !== syncRequestId || store.getState().files.currentFile?.id !== currentFileRef.id) {
     return
   }
 
@@ -458,7 +456,7 @@ function syncTouchSelectionMode(): void {
 function syncTimelineState(): void {
   const { currentGifFrameCount, currentPreviewFrameIndex } = store.getState().files
 
-  if (!previewTimelineSliderEl || !previewTimelineIndicatorEl || !previewTimelineShellEl) {
+  if (!previewTimelineSliderEl || !previewTimelineIndicatorEl || !previewTimelineHandleEl || !previewTimelineShellEl) {
     return
   }
 
@@ -469,7 +467,9 @@ function syncTimelineState(): void {
 
   const progress = currentGifFrameCount > 1 ? currentPreviewFrameIndex / (currentGifFrameCount - 1) : 0
   previewTimelineIndicatorEl.style.left = `${progress * 100}%`
+  previewTimelineHandleEl.style.left = `${progress * 100}%`
   previewTimelineIndicatorEl.classList.toggle('hidden', currentGifFrameCount === 0)
+  previewTimelineHandleEl.classList.toggle('hidden', currentGifFrameCount === 0)
 }
 
 function renderTimelineThumbnails(): void {

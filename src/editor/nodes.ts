@@ -17,6 +17,7 @@ export const stepForwardButtonEl = document.getElementById('step-forward-button'
 export const togglePlaybackButtonEl = document.getElementById('toggle-playback-button') as HTMLButtonElement
 export const playbackIconPauseEl = document.getElementById('playback-icon-pause') as HTMLSpanElement
 export const playbackIconPlayEl = document.getElementById('playback-icon-play') as HTMLSpanElement
+export const previewTimelineHandleEl = document.getElementById('preview-timeline-handle') as HTMLDivElement
 export const previewTimelineIndicatorEl = document.getElementById('preview-timeline-indicator') as HTMLDivElement
 export const previewTimelineShellEl = document.getElementById('preview-timeline-shell') as HTMLDivElement
 export const previewTimelineSliderEl = document.getElementById('preview-timeline-slider') as HTMLInputElement
