@@ -12,9 +12,28 @@ import '../styles/global.css'
     <title>Kif</title>
   </head>
   <body>
-    <h1>app</h1>
-    <canvas id="da-canvas" class="bg-red-50" width="800" height="600"> </canvas>
+    <main>
+      <h1 class="text-3xl font-semibold tracking-tight">Kif - Annotate gif memes</h1>
 
-    <script src="../editor/editor.ts"></script>
+      <div id="kif-file-picker-shell" class="relative block max-w-prose">
+        <div class="pointer-events-none absolute inset-x-6 top-6 space-y-1">
+          <label for="kif-file-picker" class="block text-lg font-medium text-zinc-900">
+            Click to choose a GIF
+          </label>
+          <p class="text-sm text-zinc-600">Or drop one here.</p>
+        </div>
+
+        <input
+          id="kif-file-picker"
+          type="file"
+          accept="image/gif"
+          class="block w-full cursor-pointer rounded-3xl border border-dashed border-zinc-300 bg-zinc-50 px-6 pb-6 pt-24 text-sm text-zinc-700 transition hover:border-sky-400 hover:bg-sky-50 file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-700"
+        />
+      </div>
+
+      <canvas id="da-canvas" class="block rounded-2xl bg-red-50" width="800" height="600"> </canvas>
+      <script src="@editor/editor.ts"></script>
+      <script src="@editor/stop-global-drop.ts"></script>
+    </main>
   </body>
 </html>
