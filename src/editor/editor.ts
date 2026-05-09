@@ -4,15 +4,11 @@ import { exportGif } from '@gif/export.ts'
 import { decodeGif } from '@gif/decode.ts'
 import type { GifFrame } from '@gif/types.ts'
 
-
 import { getFile, rememberFile } from './state/file-registry.ts'
 import { fileSlice } from './state/file-slice.ts'
 import { store } from './state/redux.ts'
+import { canvasEl, fabricCanvasEl, filePickerInput, filePickerShell } from '@editor/nodes.ts'
 
-const filePickerShell = document.getElementById('kif-file-picker-shell')
-const filePickerInput = document.getElementById('kif-file-picker')
-const canvasEl = document.getElementById('da-canvas') as HTMLCanvasElement
-const fabricCanvasEl = document.getElementById('fabric-canvas') as HTMLCanvasElement
 const canvasContext = canvasEl.getContext('2d', { willReadFrequently: true })!
 const fabricCanvas = new StaticCanvas(fabricCanvasEl)
 
