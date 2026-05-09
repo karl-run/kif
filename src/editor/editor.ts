@@ -34,6 +34,8 @@ import { initializeNodeSync } from './fabric-node-sync.ts'
 const canvasContext = canvasEl.getContext('2d', { willReadFrequently: true })!
 const fabricCanvas = new OverlayCanvas(fabricCanvasEl)
 let nodeSync: ReturnType<typeof initializeNodeSync> | null = null
+const touchSelectionQuery =
+  typeof window === 'undefined' ? null : window.matchMedia('(pointer: coarse), (hover: none)')
 
 if (canvasContext == null) {
   throw new Error('A 2D canvas context is required to preview GIFs.')
@@ -67,9 +69,11 @@ const previewScaleObserver =
         syncPreviewScale()
       })
 
+syncTouchSelectionMode()
 previewScaleObserver?.observe(previewViewportInnerEl)
 previewScaleObserver?.observe(canvasStackShellEl)
 syncPreviewScale()
+touchSelectionQuery?.addEventListener?.('change', syncTouchSelectionMode)
 
 if (filePickerShell && filePickerInput instanceof HTMLInputElement) {
   const setDragging = (dragging: boolean) => {
@@ -358,6 +362,10 @@ function syncFrameCounter(): void {
 
   gifFrameCounterEl.textContent =
     currentGifFrameCount > 0 ? `Frame ${currentPreviewFrameIndex + 1}/${currentGifFrameCount}` : ''
+}
+
+function syncTouchSelectionMode(): void {
+  fabricCanvas.selection = !(touchSelectionQuery?.matches ?? false)
 }
 
 function syncPreviewScale(): void {
