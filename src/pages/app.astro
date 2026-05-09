@@ -17,9 +17,7 @@ import '../styles/global.css'
 
       <div id="kif-file-picker-shell" class="relative block max-w-prose">
         <div class="pointer-events-none absolute inset-x-6 top-6 space-y-1">
-          <label for="kif-file-picker" class="block text-lg font-medium text-zinc-900">
-            Click to choose a GIF
-          </label>
+          <label for="kif-file-picker" class="block text-lg font-medium text-zinc-900"> Click to choose a GIF </label>
           <p class="text-sm text-zinc-600">Or drop one here.</p>
         </div>
 
@@ -31,7 +29,9 @@ import '../styles/global.css'
         />
       </div>
 
-      <canvas id="da-canvas" class="block rounded-2xl bg-red-50" width="800" height="600"> </canvas>
+      <div class="border h-150 w-200 bg-red-50 flex items-center justify-center">
+        <canvas id="da-canvas" class="bg-blue-50" width="300" height="300"> </canvas>
+      </div>
       <script src="@editor/editor.ts"></script>
       <script src="@editor/stop-global-drop.ts"></script>
     </main>
