@@ -1,10 +1,13 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 
 export interface TextNode {
+  angle: number
   id: string
   type: 'text'
   text: string
   left: number
+  scaleX: number
+  scaleY: number
   top: number
   visibleRangeEnd: number
   visibleRangeStart: number
@@ -27,10 +30,13 @@ function createTextNodeId(): string {
 
 export function createTextNode(overrides: Partial<Omit<TextNode, 'id' | 'type'>> = {}, id = createTextNodeId()): TextNode {
   return {
+    angle: 0,
     id,
     type: 'text',
     text: 'Hello, Kif!',
     left: 120,
+    scaleX: 1,
+    scaleY: 1,
     top: 114,
     visibleRangeEnd: 1,
     visibleRangeStart: 0,

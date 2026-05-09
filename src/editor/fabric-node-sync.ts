@@ -132,10 +132,13 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
     }
 
     textObject.set({
+      angle: node.angle,
       fill: node.fill,
       fontFamily: IMPACT_FONT_FAMILY,
       fontSize: node.fontSize,
       left: node.left,
+      scaleX: node.scaleX,
+      scaleY: node.scaleY,
       stroke: node.stroke ?? undefined,
       strokeWidth: node.strokeWidth,
       text: node.text,
@@ -148,13 +151,13 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
 
   function createTextObject(node: TextNode): FabricText {
     const textObject = new FabricText(node.text, {
+      angle: node.angle,
       fill: node.fill,
       fontFamily: IMPACT_FONT_FAMILY,
       fontSize: node.fontSize,
       left: node.left,
-      lockRotation: true,
-      lockScalingX: true,
-      lockScalingY: true,
+      scaleX: node.scaleX,
+      scaleY: node.scaleY,
       stroke: node.stroke ?? undefined,
       strokeWidth: node.strokeWidth,
       top: node.top,
@@ -174,15 +177,24 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
 
       const left = textObject.left ?? 0
       const top = textObject.top ?? 0
+      const angle = textObject.angle ?? 0
+      const scaleX = textObject.scaleX ?? 1
+      const scaleY = textObject.scaleY ?? 1
 
-      if (currentNode.left === left && currentNode.top === top) {
+      if (
+        currentNode.left === left &&
+        currentNode.top === top &&
+        currentNode.angle === angle &&
+        currentNode.scaleX === scaleX &&
+        currentNode.scaleY === scaleY
+      ) {
         return
       }
 
       store.dispatch(
         nodeSlice.actions.updateTextNode({
           id: node.id,
-          changes: { left, top },
+          changes: { angle, left, scaleX, scaleY, top },
         }),
       )
     }

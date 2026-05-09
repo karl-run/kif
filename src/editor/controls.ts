@@ -275,9 +275,12 @@ function duplicateTextNode(nodeId: string): void {
   store.dispatch(
     nodeSlice.actions.upsertTextNode(
       createTextNode({
+        angle: node.angle,
         fill: node.fill,
         fontSize: node.fontSize,
         left: node.left + 24,
+        scaleX: node.scaleX,
+        scaleY: node.scaleY,
         stroke: node.stroke,
         strokeWidth: node.strokeWidth,
         text: node.text,
