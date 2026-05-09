@@ -1,17 +1,25 @@
 ---
+import '../styles/global.css'
 
+import { StaticCanvas, FabricText } from 'fabric'
+
+const canvas = new StaticCanvas()
+const helloWorld = new FabricText('Hello world!')
+canvas.add(helloWorld)
+canvas.centerObject(helloWorld)
 ---
 
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Kif</title>
-	</head>
-	<body>
-		<h1>app</h1>
-	</body>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Kif</title>
+  </head>
+  <body>
+    <h1>app</h1>
+    <canvas></canvas>
+  </body>
 </html>
