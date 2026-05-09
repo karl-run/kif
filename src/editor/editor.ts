@@ -495,8 +495,8 @@ function renderTimelineThumbnails(): void {
 
   for (let index = 0; index < sampleCount; index += 1) {
     const thumbnailCanvas = document.createElement('canvas')
-    thumbnailCanvas.width = 96
-    thumbnailCanvas.height = 64
+    thumbnailCanvas.width = 104
+    thumbnailCanvas.height = 72
     thumbnailCanvas.className = 'h-full min-w-0 flex-1 bg-zinc-100 dark:bg-zinc-900'
 
     const thumbnailContext = thumbnailCanvas.getContext('2d')
@@ -509,16 +509,23 @@ function renderTimelineThumbnails(): void {
     }
 
     sourceContext.putImageData(frame.imageData, 0, 0)
-    thumbnailContext.fillStyle = '#f4f4f5'
-    thumbnailContext.fillRect(0, 0, thumbnailCanvas.width, thumbnailCanvas.height)
+    const scale = Math.max(thumbnailCanvas.width / sourceCanvas.width, thumbnailCanvas.height / sourceCanvas.height)
+    const sourceWidth = thumbnailCanvas.width / scale
+    const sourceHeight = thumbnailCanvas.height / scale
+    const sourceX = Math.max(0, (sourceCanvas.width - sourceWidth) / 2)
+    const sourceY = Math.max(0, (sourceCanvas.height - sourceHeight) / 2)
 
-    const scale = Math.min(thumbnailCanvas.width / sourceCanvas.width, thumbnailCanvas.height / sourceCanvas.height)
-    const drawWidth = Math.max(1, Math.round(sourceCanvas.width * scale))
-    const drawHeight = Math.max(1, Math.round(sourceCanvas.height * scale))
-    const offsetX = Math.round((thumbnailCanvas.width - drawWidth) / 2)
-    const offsetY = Math.round((thumbnailCanvas.height - drawHeight) / 2)
-
-    thumbnailContext.drawImage(sourceCanvas, offsetX, offsetY, drawWidth, drawHeight)
+    thumbnailContext.drawImage(
+      sourceCanvas,
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
+      0,
+      0,
+      thumbnailCanvas.width,
+      thumbnailCanvas.height,
+    )
     previewTimelineThumbnailsEl.append(thumbnailCanvas)
   }
 }
