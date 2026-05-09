@@ -216,6 +216,33 @@ function createTextNodeRow(node: TextNode): HTMLDivElement {
   sliderShell.append(endHandle)
 
   visibilitySection.append(sliderShell)
+
+  const snapActions = document.createElement('div')
+  snapActions.className = 'flex items-center justify-between gap-3'
+
+  const snapStartButton = document.createElement('button')
+  snapStartButton.type = 'button'
+  snapStartButton.className =
+    'rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px] font-medium text-zinc-600 transition hover:border-zinc-300 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:text-zinc-400'
+  snapStartButton.textContent = 'Set start to current'
+  snapStartButton.dataset.role = 'visibility-set-start'
+  snapStartButton.addEventListener('click', () => {
+    snapVisibleRangeToCurrentFrame(node.id, 'start')
+  })
+  snapActions.append(snapStartButton)
+
+  const snapEndButton = document.createElement('button')
+  snapEndButton.type = 'button'
+  snapEndButton.className =
+    'rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px] font-medium text-zinc-600 transition hover:border-zinc-300 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:text-zinc-400'
+  snapEndButton.textContent = 'Set end to current'
+  snapEndButton.dataset.role = 'visibility-set-end'
+  snapEndButton.addEventListener('click', () => {
+    snapVisibleRangeToCurrentFrame(node.id, 'end')
+  })
+  snapActions.append(snapEndButton)
+
+  visibilitySection.append(snapActions)
   row.append(visibilitySection)
 
   return row
@@ -262,6 +289,16 @@ function updateTextNodeRow(row: HTMLDivElement, node: TextNode, index: number, f
       frameCount > 1
         ? `Frames ${formatFrameIndex(node.visibleRangeStart, frameCount)}-${formatFrameIndex(node.visibleRangeEnd, frameCount)}`
         : 'Load a GIF to set visibility'
+  }
+
+  const snapStartButton = row.querySelector('[data-role="visibility-set-start"]')
+  if (snapStartButton instanceof HTMLButtonElement) {
+    snapStartButton.disabled = frameCount <= 1
+  }
+
+  const snapEndButton = row.querySelector('[data-role="visibility-set-end"]')
+  if (snapEndButton instanceof HTMLButtonElement) {
+    snapEndButton.disabled = frameCount <= 1
   }
 }
 
@@ -336,6 +373,35 @@ function updateRangeFromPointer(nodeId: string, handle: RangeHandle, sliderShell
 
 function stopRangeDrag(): void {
   activeRangeDrag = null
+}
+
+function snapVisibleRangeToCurrentFrame(nodeId: string, edge: RangeHandle): void {
+  const node = getTextNode(nodeId)
+  const { currentGifFrameCount, currentPreviewFrameIndex } = store.getState().files
+
+  if (!node || currentGifFrameCount <= 1) {
+    return
+  }
+
+  selectCanvasTextNode(nodeId)
+
+  const currentFrameValue = currentPreviewFrameIndex / (currentGifFrameCount - 1)
+
+  store.dispatch(
+    nodeSlice.actions.updateTextNode({
+      id: nodeId,
+      changes:
+        edge === 'start'
+          ? {
+              visibleRangeEnd: Math.max(currentFrameValue, node.visibleRangeEnd),
+              visibleRangeStart: currentFrameValue,
+            }
+          : {
+              visibleRangeEnd: currentFrameValue,
+              visibleRangeStart: Math.min(node.visibleRangeStart, currentFrameValue),
+            },
+    }),
+  )
 }
 
 function getTextNode(nodeId: string): TextNode | null {
