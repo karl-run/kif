@@ -1,12 +1,14 @@
-import { FabricText } from 'fabric'
+import { FabricImage, FabricText } from 'fabric'
 
-import { nodeSlice, type TextNode } from './state/node-slice.ts'
+import { nodeSlice, type EditorNode, type PictureNode, type TextNode } from './state/node-slice.ts'
 import type { AppStore } from './state/redux.ts'
 
 import { OverlayCanvas } from './fabric-canvas.ts'
 
 const IMPACT_FONT_FAMILY = 'Impact'
 let activeNodeSync: ReturnType<typeof initializeNodeSync> | null = null
+
+type CanvasNodeObject = FabricImage | FabricText
 
 type NodeSyncOptions = {
   fabricCanvas: OverlayCanvas
@@ -20,8 +22,9 @@ type FrameContext = {
 }
 
 export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: NodeSyncOptions) {
-  const fabricTextNodes = new Map<string, FabricText>()
-  const fabricTextDisposers = new Map<string, Array<() => void>>()
+  const fabricNodes = new Map<string, CanvasNodeObject>()
+  const fabricNodeDisposers = new Map<string, Array<() => void>>()
+  const pictureLoadControllers = new Map<string, AbortController>()
   let isSyncingNodesToCanvas = false
   let previousNodes = store.getState().nodes
   let currentFrameContext: FrameContext = { frameCount: 0, frameIndex: 0 }
@@ -37,20 +40,27 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
       const { allIds, byId } = store.getState().nodes
       const activeIds = new Set(allIds)
 
-      for (const nodeId of fabricTextNodes.keys()) {
+      for (const nodeId of fabricNodes.keys()) {
         if (!activeIds.has(nodeId)) {
-          removeTextNodeFromCanvas(nodeId)
+          removeNodeFromCanvas(nodeId)
         }
       }
 
-      for (const nodeId of allIds) {
+      for (const [index, nodeId] of allIds.entries()) {
         const node = byId[nodeId]
 
-        if (!node || node.type !== 'text') {
+        if (!node) {
           continue
         }
 
-        upsertTextNodeOnCanvas(node)
+        switch (node.type) {
+          case 'picture':
+            upsertPictureNodeOnCanvas(node, index)
+            break
+          case 'text':
+            upsertTextNodeOnCanvas(node, index)
+            break
+        }
       }
     } finally {
       isSyncingNodesToCanvas = false
@@ -82,8 +92,8 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
 
       unsubscribe()
 
-      for (const nodeId of Array.from(fabricTextNodes.keys())) {
-        removeTextNodeFromCanvas(nodeId)
+      for (const nodeId of Array.from(fabricNodes.keys())) {
+        removeNodeFromCanvas(nodeId)
       }
     },
     renderFrame(frameIndex: number, frameCount: number) {
@@ -91,14 +101,14 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
       applyFrameVisibility(currentFrameContext)
       fabricCanvas.renderAll()
     },
-    selectTextNode(nodeId: string) {
-      const textObject = fabricTextNodes.get(nodeId)
+    selectNode(nodeId: string) {
+      const object = fabricNodes.get(nodeId)
 
-      if (!textObject) {
+      if (!object) {
         return
       }
 
-      fabricCanvas.setActiveObject(textObject)
+      fabricCanvas.setActiveObject(object)
       fabricCanvas.renderAll()
     },
     sync: syncNodesToCanvas,
@@ -122,12 +132,12 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
   activeNodeSync = api
   return api
 
-  function upsertTextNodeOnCanvas(node: TextNode): void {
-    let textObject = fabricTextNodes.get(node.id)
+  function upsertTextNodeOnCanvas(node: TextNode, index: number): void {
+    let textObject = fabricNodes.get(node.id)
 
-    if (!textObject) {
+    if (!(textObject instanceof FabricText)) {
       textObject = createTextObject(node)
-      fabricTextNodes.set(node.id, textObject)
+      fabricNodes.set(node.id, textObject)
       fabricCanvas.add(textObject)
     }
 
@@ -147,6 +157,30 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
     })
     textObject.initDimensions()
     textObject.setCoords()
+    fabricCanvas.moveObjectTo(textObject, index)
+  }
+
+  function upsertPictureNodeOnCanvas(node: PictureNode, index: number): void {
+    let pictureObject = fabricNodes.get(node.id)
+
+    if (!(pictureObject instanceof FabricImage)) {
+      pictureObject = createPictureObject(node)
+      fabricNodes.set(node.id, pictureObject)
+      fabricCanvas.add(pictureObject)
+    }
+
+    pictureObject.set({
+      angle: node.angle,
+      left: node.left,
+      scaleX: node.scaleX,
+      scaleY: node.scaleY,
+      top: node.top,
+      visible: Boolean(node.src) && isNodeVisibleAtFrame(node, currentFrameContext),
+    })
+    pictureObject.setCoords()
+    fabricCanvas.moveObjectTo(pictureObject, index)
+
+    void syncPictureSource(node, pictureObject)
   }
 
   function createTextObject(node: TextNode): FabricText {
@@ -199,44 +233,145 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
       )
     }
 
-    fabricTextDisposers.set(node.id, [textObject.on('modified', syncNodeFromObject)])
+    fabricNodeDisposers.set(node.id, [textObject.on('modified', syncNodeFromObject)])
 
     return textObject
   }
 
-  function removeTextNodeFromCanvas(nodeId: string): void {
-    const textObject = fabricTextNodes.get(nodeId)
+  function createPictureObject(node: PictureNode): FabricImage {
+    const placeholder = document.createElement('canvas')
+    placeholder.width = 1
+    placeholder.height = 1
 
-    if (!textObject) {
+    const pictureObject = new FabricImage(placeholder, {
+      angle: node.angle,
+      left: node.left,
+      scaleX: node.scaleX,
+      scaleY: node.scaleY,
+      top: node.top,
+      visible: false,
+    })
+
+    const syncNodeFromObject = () => {
+      if (isSyncingNodesToCanvas) {
+        return
+      }
+
+      const currentNode = store.getState().nodes.byId[node.id]
+
+      if (!currentNode || currentNode.type !== 'picture') {
+        return
+      }
+
+      const left = pictureObject.left ?? 0
+      const top = pictureObject.top ?? 0
+      const angle = pictureObject.angle ?? 0
+      const scaleX = pictureObject.scaleX ?? 1
+      const scaleY = pictureObject.scaleY ?? 1
+
+      if (
+        currentNode.left === left &&
+        currentNode.top === top &&
+        currentNode.angle === angle &&
+        currentNode.scaleX === scaleX &&
+        currentNode.scaleY === scaleY
+      ) {
+        return
+      }
+
+      store.dispatch(
+        nodeSlice.actions.updatePictureNode({
+          id: node.id,
+          changes: { angle, left, scaleX, scaleY, top },
+        }),
+      )
+    }
+
+    fabricNodeDisposers.set(node.id, [pictureObject.on('modified', syncNodeFromObject)])
+
+    return pictureObject
+  }
+
+  async function syncPictureSource(node: PictureNode, pictureObject: FabricImage): Promise<void> {
+    const existingController = pictureLoadControllers.get(node.id)
+    const currentSrc = pictureObject.getSrc()
+
+    if (!node.src) {
+      existingController?.abort()
+      pictureLoadControllers.delete(node.id)
+      pictureObject.visible = false
       return
     }
 
-    for (const dispose of fabricTextDisposers.get(nodeId) ?? []) {
+    if (currentSrc === node.src) {
+      pictureObject.visible = isNodeVisibleAtFrame(node, currentFrameContext)
+      return
+    }
+
+    existingController?.abort()
+    const controller = new AbortController()
+    pictureLoadControllers.set(node.id, controller)
+
+    try {
+      await pictureObject.setSrc(node.src, { signal: controller.signal })
+
+      if (pictureLoadControllers.get(node.id) !== controller) {
+        return
+      }
+
+      pictureObject.set({
+        visible: isNodeVisibleAtFrame(node, currentFrameContext),
+      })
+      pictureObject.setCoords()
+      fabricCanvas.renderAll()
+    } catch (error) {
+      if (!(error instanceof Error) || error.name !== 'AbortError') {
+        throw error
+      }
+    } finally {
+      if (pictureLoadControllers.get(node.id) === controller) {
+        pictureLoadControllers.delete(node.id)
+      }
+    }
+  }
+
+  function removeNodeFromCanvas(nodeId: string): void {
+    pictureLoadControllers.get(nodeId)?.abort()
+    pictureLoadControllers.delete(nodeId)
+
+    const object = fabricNodes.get(nodeId)
+
+    if (!object) {
+      return
+    }
+
+    for (const dispose of fabricNodeDisposers.get(nodeId) ?? []) {
       dispose()
     }
 
-    fabricTextDisposers.delete(nodeId)
-    fabricTextNodes.delete(nodeId)
-    fabricCanvas.remove(textObject)
+    fabricNodeDisposers.delete(nodeId)
+    fabricNodes.delete(nodeId)
+    fabricCanvas.remove(object)
+    object.dispose()
   }
 
   function applyFrameVisibility(frameContext: FrameContext): void {
     const { byId } = store.getState().nodes
 
-    for (const [nodeId, textObject] of fabricTextNodes) {
+    for (const [nodeId, object] of fabricNodes) {
       const node = byId[nodeId]
 
-      textObject.visible = Boolean(node && node.type === 'text' && isNodeVisibleAtFrame(node, frameContext))
-      textObject.setCoords()
+      object.visible = Boolean(node && isNodeVisibleAtFrame(node, frameContext) && (node.type !== 'picture' || node.src))
+      object.setCoords()
     }
   }
 }
 
-export function selectCanvasTextNode(nodeId: string): void {
-  activeNodeSync?.selectTextNode(nodeId)
+export function selectCanvasNode(nodeId: string): void {
+  activeNodeSync?.selectNode(nodeId)
 }
 
-function isNodeVisibleAtFrame(node: TextNode, frameContext: FrameContext): boolean {
+function isNodeVisibleAtFrame(node: EditorNode, frameContext: FrameContext): boolean {
   if (frameContext.frameCount <= 1) {
     return true
   }

@@ -1,23 +1,48 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 
-export interface TextNode {
+interface BaseNode {
   angle: number
   id: string
-  type: 'text'
-  text: string
   left: number
   scaleX: number
   scaleY: number
   top: number
   visibleRangeEnd: number
   visibleRangeStart: number
+}
+
+export interface TextNode {
+  angle: BaseNode['angle']
+  id: BaseNode['id']
+  type: 'text'
+  text: string
+  left: BaseNode['left']
+  scaleX: BaseNode['scaleX']
+  scaleY: BaseNode['scaleY']
+  top: BaseNode['top']
+  visibleRangeEnd: BaseNode['visibleRangeEnd']
+  visibleRangeStart: BaseNode['visibleRangeStart']
   fontSize: number
   fill: string
   stroke: string | null
   strokeWidth: number
 }
 
-export type EditorNode = TextNode
+export interface PictureNode {
+  angle: BaseNode['angle']
+  id: BaseNode['id']
+  type: 'picture'
+  src: string
+  name: string
+  left: BaseNode['left']
+  scaleX: BaseNode['scaleX']
+  scaleY: BaseNode['scaleY']
+  top: BaseNode['top']
+  visibleRangeEnd: BaseNode['visibleRangeEnd']
+  visibleRangeStart: BaseNode['visibleRangeStart']
+}
+
+export type EditorNode = TextNode | PictureNode
 
 export interface NodeState {
   allIds: string[]
@@ -48,6 +73,26 @@ export function createTextNode(overrides: Partial<Omit<TextNode, 'id' | 'type'>>
   }
 }
 
+export function createPictureNode(
+  overrides: Partial<Omit<PictureNode, 'id' | 'type'>> = {},
+  id = createTextNodeId(),
+): PictureNode {
+  return {
+    angle: 0,
+    id,
+    type: 'picture',
+    src: '',
+    name: 'Picture',
+    left: 120,
+    scaleX: 1,
+    scaleY: 1,
+    top: 114,
+    visibleRangeEnd: 1,
+    visibleRangeStart: 0,
+    ...overrides,
+  }
+}
+
 export const defaultTextNode: TextNode = createTextNode({}, 'default-text-node')
 
 const initialState: NodeState = {
@@ -70,6 +115,15 @@ export const nodeSlice = createSlice({
 
       state.byId[node.id] = node
     },
+    upsertPictureNode: (state, action: PayloadAction<PictureNode>) => {
+      const node = action.payload
+
+      if (!state.byId[node.id]) {
+        state.allIds.push(node.id)
+      }
+
+      state.byId[node.id] = node
+    },
     updateTextNode: (
       state,
       action: PayloadAction<{ id: string; changes: Partial<Omit<TextNode, 'id' | 'type'>> }>,
@@ -77,6 +131,21 @@ export const nodeSlice = createSlice({
       const existingNode = state.byId[action.payload.id]
 
       if (!existingNode || existingNode.type !== 'text') {
+        return
+      }
+
+      state.byId[action.payload.id] = {
+        ...existingNode,
+        ...action.payload.changes,
+      }
+    },
+    updatePictureNode: (
+      state,
+      action: PayloadAction<{ id: string; changes: Partial<Omit<PictureNode, 'id' | 'type'>> }>,
+    ) => {
+      const existingNode = state.byId[action.payload.id]
+
+      if (!existingNode || existingNode.type !== 'picture') {
         return
       }
 

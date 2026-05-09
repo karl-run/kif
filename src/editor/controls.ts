@@ -1,11 +1,11 @@
-import { addTextNodeButtonEl, textNodeControlsEl } from './nodes.ts'
-import { selectCanvasTextNode } from './fabric-node-sync.ts'
-import { createTextNode, nodeSlice, type TextNode } from './state/node-slice.ts'
+import { addPictureNodeButtonEl, addTextNodeButtonEl, overlayNodeControlsEl } from './nodes.ts'
+import { selectCanvasNode } from './fabric-node-sync.ts'
+import { createPictureNode, createTextNode, nodeSlice, type EditorNode, type PictureNode, type TextNode } from './state/node-slice.ts'
 import { store } from './state/redux.ts'
 
 type RangeHandle = 'start' | 'end'
 
-const textControlRows = new Map<string, HTMLDivElement>()
+const nodeControlRows = new Map<string, HTMLDivElement>()
 let previousNodes = store.getState().nodes
 let previousFrameCount = store.getState().files.currentGifFrameCount
 let activeRangeDrag:
@@ -27,7 +27,7 @@ document.addEventListener('pointermove', (event) => {
 document.addEventListener('pointerup', stopRangeDrag)
 document.addEventListener('pointercancel', stopRangeDrag)
 
-if (addTextNodeButtonEl && textNodeControlsEl) {
+if (addTextNodeButtonEl && overlayNodeControlsEl) {
   addTextNodeButtonEl.addEventListener('click', () => {
     const nodeCount = store.getState().nodes.allIds.length
     const offset = nodeCount * 24
@@ -42,7 +42,15 @@ if (addTextNodeButtonEl && textNodeControlsEl) {
       ),
     )
   })
+}
 
+if (addPictureNodeButtonEl && overlayNodeControlsEl) {
+  addPictureNodeButtonEl.addEventListener('click', () => {
+    void createPictureNodeFromPicker()
+  })
+}
+
+if (overlayNodeControlsEl) {
   store.subscribe(() => {
     const state = store.getState()
 
@@ -52,64 +60,146 @@ if (addTextNodeButtonEl && textNodeControlsEl) {
 
     previousNodes = state.nodes
     previousFrameCount = state.files.currentGifFrameCount
-    syncTextNodeControls()
+    syncNodeControls()
   })
 
-  syncTextNodeControls()
+  syncNodeControls()
 }
 
-function syncTextNodeControls(): void {
+function syncNodeControls(): void {
+  if (!overlayNodeControlsEl) {
+    return
+  }
+
   const state = store.getState()
   const { allIds, byId } = state.nodes
   const activeIds = new Set(allIds)
   const frameCount = state.files.currentGifFrameCount
+  let textCount = 0
+  let pictureCount = 0
 
-  for (const nodeId of textControlRows.keys()) {
+  for (const nodeId of nodeControlRows.keys()) {
     if (!activeIds.has(nodeId)) {
-      const row = textControlRows.get(nodeId)
+      const row = nodeControlRows.get(nodeId)
       row?.remove()
-      textControlRows.delete(nodeId)
+      nodeControlRows.delete(nodeId)
     }
   }
 
-  const emptyText = textNodeControlsEl.firstChild
+  const emptyText = overlayNodeControlsEl.firstChild
 
-  if (emptyText instanceof Text && emptyText.textContent === 'No text overlays yet.') {
+  if (emptyText instanceof Text && emptyText.textContent === 'No overlays yet.') {
     emptyText.remove()
   }
 
   allIds.forEach((nodeId, index) => {
     const node = byId[nodeId]
 
-    if (!node || node.type !== 'text') {
+    if (!node) {
       return
     }
 
-    let row = textControlRows.get(node.id)
+    const typeIndex = node.type === 'text' ? ++textCount : ++pictureCount
+
+    let row = nodeControlRows.get(node.id)
 
     if (!row) {
-      row = createTextNodeRow(node)
-      textControlRows.set(node.id, row)
+      row = node.type === 'text' ? createTextNodeRow(node) : createPictureNodeRow(node)
+      nodeControlRows.set(node.id, row)
     }
 
-    updateTextNodeRow(row, node, index, frameCount)
-    const currentChild = textNodeControlsEl.children[index]
+    if (node.type === 'text') {
+      updateTextNodeRow(row, node, typeIndex, frameCount)
+    } else {
+      updatePictureNodeRow(row, node, typeIndex, frameCount)
+    }
+
+    const currentChild = overlayNodeControlsEl.children[index]
 
     if (currentChild !== row) {
-      textNodeControlsEl.insertBefore(row, currentChild ?? null)
+      overlayNodeControlsEl.insertBefore(row, currentChild ?? null)
     }
   })
 
-  textNodeControlsEl.dataset.empty = allIds.length === 0 ? 'true' : 'false'
+  overlayNodeControlsEl.dataset.empty = allIds.length === 0 ? 'true' : 'false'
   if (allIds.length === 0) {
-    textNodeControlsEl.textContent = 'No text overlays yet.'
+    overlayNodeControlsEl.textContent = 'No overlays yet.'
   }
 }
 
 function createTextNodeRow(node: TextNode): HTMLDivElement {
+  const row = createBaseNodeRow(node.id)
+
+  const input = document.createElement('input')
+  input.type = 'text'
+  input.className =
+    'block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100'
+  input.placeholder = 'Write overlay text'
+  input.dataset.role = 'text-input'
+  input.addEventListener('focus', () => {
+    selectCanvasNode(node.id)
+  })
+  input.addEventListener('input', () => {
+    selectCanvasNode(node.id)
+    store.dispatch(
+      nodeSlice.actions.updateTextNode({
+        id: node.id,
+        changes: { text: input.value },
+      }),
+    )
+  })
+  row.append(input)
+  row.append(createVisibilitySection(node.id))
+
+  return row
+}
+
+function createPictureNodeRow(node: PictureNode): HTMLDivElement {
+  const row = createBaseNodeRow(node.id)
+
+  const content = document.createElement('div')
+  content.className = 'space-y-3'
+
+  const previewShell = document.createElement('div')
+  previewShell.className = 'flex items-center gap-3 rounded-lg border border-zinc-200 bg-white p-3'
+
+  const previewImage = document.createElement('img')
+  previewImage.className = 'h-16 w-16 rounded-md border border-zinc-200 bg-zinc-100 object-contain'
+  previewImage.alt = ''
+  previewImage.dataset.role = 'picture-preview'
+  previewShell.append(previewImage)
+
+  const previewMeta = document.createElement('div')
+  previewMeta.className = 'min-w-0 flex-1 space-y-2'
+
+  const pictureName = document.createElement('div')
+  pictureName.className = 'truncate text-sm font-medium text-zinc-900'
+  pictureName.dataset.role = 'picture-name'
+  previewMeta.append(pictureName)
+
+  const replaceButton = document.createElement('button')
+  replaceButton.type = 'button'
+  replaceButton.className =
+    'rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-100'
+  replaceButton.textContent = 'Replace image'
+  replaceButton.addEventListener('click', () => {
+    selectCanvasNode(node.id)
+    void replacePictureNodeFromPicker(node.id)
+  })
+  previewMeta.append(replaceButton)
+
+  previewShell.append(previewMeta)
+  content.append(previewShell)
+  row.append(content)
+  row.append(createVisibilitySection(node.id))
+
+  return row
+}
+
+function createBaseNodeRow(nodeId: string): HTMLDivElement {
   const row = document.createElement('div')
   row.className = 'rounded-xl border border-zinc-200 bg-zinc-50 p-4'
-  row.dataset.nodeId = node.id
+  row.dataset.nodeId = nodeId
 
   const header = document.createElement('div')
   header.className = 'mb-3 flex items-center justify-between gap-3'
@@ -127,7 +217,7 @@ function createTextNodeRow(node: TextNode): HTMLDivElement {
   duplicateButton.className =
     'rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-100'
   duplicateButton.textContent = 'Duplicate'
-  duplicateButton.addEventListener('click', () => duplicateTextNode(node.id))
+  duplicateButton.addEventListener('click', () => duplicateNode(nodeId))
   actions.append(duplicateButton)
 
   const deleteButton = document.createElement('button')
@@ -136,33 +226,17 @@ function createTextNodeRow(node: TextNode): HTMLDivElement {
     'rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 transition hover:border-red-300 hover:bg-red-50'
   deleteButton.textContent = 'Delete'
   deleteButton.addEventListener('click', () => {
-    store.dispatch(nodeSlice.actions.removeNode(node.id))
+    store.dispatch(nodeSlice.actions.removeNode(nodeId))
   })
   actions.append(deleteButton)
 
   header.append(actions)
   row.append(header)
 
-  const input = document.createElement('input')
-  input.type = 'text'
-  input.className =
-    'block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100'
-  input.placeholder = 'Write overlay text'
-  input.dataset.role = 'text-input'
-  input.addEventListener('focus', () => {
-    selectCanvasTextNode(node.id)
-  })
-  input.addEventListener('input', () => {
-    selectCanvasTextNode(node.id)
-    store.dispatch(
-      nodeSlice.actions.updateTextNode({
-        id: node.id,
-        changes: { text: input.value },
-      }),
-    )
-  })
-  row.append(input)
+  return row
+}
 
+function createVisibilitySection(nodeId: string): HTMLDivElement {
   const visibilitySection = document.createElement('div')
   visibilitySection.className = 'mt-3 space-y-2'
 
@@ -200,7 +274,7 @@ function createTextNodeRow(node: TextNode): HTMLDivElement {
   startHandle.setAttribute('aria-label', 'Start of visible range')
   startHandle.dataset.role = 'visibility-start-handle'
   startHandle.addEventListener('pointerdown', (event) => {
-    beginRangeDrag(node.id, 'start', sliderShell, event)
+    beginRangeDrag(nodeId, 'start', sliderShell, event)
   })
   sliderShell.append(startHandle)
 
@@ -211,7 +285,7 @@ function createTextNodeRow(node: TextNode): HTMLDivElement {
   endHandle.setAttribute('aria-label', 'End of visible range')
   endHandle.dataset.role = 'visibility-end-handle'
   endHandle.addEventListener('pointerdown', (event) => {
-    beginRangeDrag(node.id, 'end', sliderShell, event)
+    beginRangeDrag(nodeId, 'end', sliderShell, event)
   })
   sliderShell.append(endHandle)
 
@@ -227,7 +301,7 @@ function createTextNodeRow(node: TextNode): HTMLDivElement {
   snapStartButton.textContent = 'Set start to current'
   snapStartButton.dataset.role = 'visibility-set-start'
   snapStartButton.addEventListener('click', () => {
-    snapVisibleRangeToCurrentFrame(node.id, 'start')
+    snapVisibleRangeToCurrentFrame(nodeId, 'start')
   })
   snapActions.append(snapStartButton)
 
@@ -238,14 +312,13 @@ function createTextNodeRow(node: TextNode): HTMLDivElement {
   snapEndButton.textContent = 'Set end to current'
   snapEndButton.dataset.role = 'visibility-set-end'
   snapEndButton.addEventListener('click', () => {
-    snapVisibleRangeToCurrentFrame(node.id, 'end')
+    snapVisibleRangeToCurrentFrame(nodeId, 'end')
   })
   snapActions.append(snapEndButton)
 
   visibilitySection.append(snapActions)
-  row.append(visibilitySection)
 
-  return row
+  return visibilitySection
 }
 
 function updateTextNodeRow(row: HTMLDivElement, node: TextNode, index: number, frameCount: number): void {
@@ -253,7 +326,7 @@ function updateTextNodeRow(row: HTMLDivElement, node: TextNode, index: number, f
 
   const title = row.querySelector('[data-role="title"]')
   if (title instanceof HTMLDivElement) {
-    title.textContent = `Text ${index + 1}`
+    title.textContent = `Text ${index}`
   }
 
   const input = row.querySelector('[data-role="text-input"]')
@@ -261,6 +334,37 @@ function updateTextNodeRow(row: HTMLDivElement, node: TextNode, index: number, f
     input.value = node.text
   }
 
+  updateVisibilityControls(row, node, frameCount)
+}
+
+function updatePictureNodeRow(row: HTMLDivElement, node: PictureNode, index: number, frameCount: number): void {
+  row.dataset.nodeId = node.id
+
+  const title = row.querySelector('[data-role="title"]')
+  if (title instanceof HTMLDivElement) {
+    title.textContent = `Picture ${index}`
+  }
+
+  const pictureName = row.querySelector('[data-role="picture-name"]')
+  if (pictureName instanceof HTMLDivElement) {
+    pictureName.textContent = node.name || 'Image'
+  }
+
+  const picturePreview = row.querySelector('[data-role="picture-preview"]')
+  if (picturePreview instanceof HTMLImageElement) {
+    if (node.src) {
+      picturePreview.src = node.src
+      picturePreview.style.visibility = 'visible'
+    } else {
+      picturePreview.removeAttribute('src')
+      picturePreview.style.visibility = 'hidden'
+    }
+  }
+
+  updateVisibilityControls(row, node, frameCount)
+}
+
+function updateVisibilityControls(row: HTMLDivElement, node: EditorNode, frameCount: number): void {
   const startHandle = row.querySelector('[data-role="visibility-start-handle"]')
   if (startHandle instanceof HTMLButtonElement) {
     startHandle.style.left = `${clampPercent(node.visibleRangeStart * 100)}%`
@@ -302,31 +406,52 @@ function updateTextNodeRow(row: HTMLDivElement, node: TextNode, index: number, f
   }
 }
 
-function duplicateTextNode(nodeId: string): void {
-  const node = store.getState().nodes.byId[nodeId]
+function duplicateNode(nodeId: string): void {
+  const node = getNode(nodeId)
 
-  if (!node || node.type !== 'text') {
+  if (!node) {
     return
   }
 
-  store.dispatch(
-    nodeSlice.actions.upsertTextNode(
-      createTextNode({
-        angle: node.angle,
-        fill: node.fill,
-        fontSize: node.fontSize,
-        left: node.left + 24,
-        scaleX: node.scaleX,
-        scaleY: node.scaleY,
-        stroke: node.stroke,
-        strokeWidth: node.strokeWidth,
-        text: node.text,
-        top: node.top + 24,
-        visibleRangeEnd: node.visibleRangeEnd,
-        visibleRangeStart: node.visibleRangeStart,
-      }),
-    ),
-  )
+  switch (node.type) {
+    case 'picture':
+      store.dispatch(
+        nodeSlice.actions.upsertPictureNode(
+          createPictureNode({
+            angle: node.angle,
+            left: node.left + 24,
+            name: node.name,
+            scaleX: node.scaleX,
+            scaleY: node.scaleY,
+            src: node.src,
+            top: node.top + 24,
+            visibleRangeEnd: node.visibleRangeEnd,
+            visibleRangeStart: node.visibleRangeStart,
+          }),
+        ),
+      )
+      break
+    case 'text':
+      store.dispatch(
+        nodeSlice.actions.upsertTextNode(
+          createTextNode({
+            angle: node.angle,
+            fill: node.fill,
+            fontSize: node.fontSize,
+            left: node.left + 24,
+            scaleX: node.scaleX,
+            scaleY: node.scaleY,
+            stroke: node.stroke,
+            strokeWidth: node.strokeWidth,
+            text: node.text,
+            top: node.top + 24,
+            visibleRangeEnd: node.visibleRangeEnd,
+            visibleRangeStart: node.visibleRangeStart,
+          }),
+        ),
+      )
+      break
+  }
 }
 
 function beginRangeDrag(nodeId: string, handle: RangeHandle, sliderShell: HTMLDivElement, event: PointerEvent): void {
@@ -334,14 +459,14 @@ function beginRangeDrag(nodeId: string, handle: RangeHandle, sliderShell: HTMLDi
     return
   }
 
-  selectCanvasTextNode(nodeId)
+  selectCanvasNode(nodeId)
   activeRangeDrag = { handle, nodeId, sliderShell }
   event.preventDefault()
   updateRangeFromPointer(nodeId, handle, sliderShell, event.clientX)
 }
 
 function updateRangeFromPointer(nodeId: string, handle: RangeHandle, sliderShell: HTMLDivElement, clientX: number): void {
-  const node = getTextNode(nodeId)
+  const node = getNode(nodeId)
 
   if (!node) {
     activeRangeDrag = null
@@ -356,19 +481,30 @@ function updateRangeFromPointer(nodeId: string, handle: RangeHandle, sliderShell
 
   const nextValue = Math.min(1, Math.max(0, (clientX - sliderBounds.left) / sliderBounds.width))
 
-  store.dispatch(
-    nodeSlice.actions.updateTextNode({
-      id: nodeId,
-      changes:
-        handle === 'start'
-          ? {
-              visibleRangeStart: Math.min(nextValue, node.visibleRangeEnd),
-            }
-          : {
-              visibleRangeEnd: Math.max(nextValue, node.visibleRangeStart),
-            },
-    }),
-  )
+  switch (node.type) {
+    case 'picture':
+      store.dispatch(
+        nodeSlice.actions.updatePictureNode({
+          id: nodeId,
+          changes:
+            handle === 'start'
+              ? { visibleRangeStart: Math.min(nextValue, node.visibleRangeEnd) }
+              : { visibleRangeEnd: Math.max(nextValue, node.visibleRangeStart) },
+        }),
+      )
+      break
+    case 'text':
+      store.dispatch(
+        nodeSlice.actions.updateTextNode({
+          id: nodeId,
+          changes:
+            handle === 'start'
+              ? { visibleRangeStart: Math.min(nextValue, node.visibleRangeEnd) }
+              : { visibleRangeEnd: Math.max(nextValue, node.visibleRangeStart) },
+        }),
+      )
+      break
+  }
 }
 
 function stopRangeDrag(): void {
@@ -376,42 +512,143 @@ function stopRangeDrag(): void {
 }
 
 function snapVisibleRangeToCurrentFrame(nodeId: string, edge: RangeHandle): void {
-  const node = getTextNode(nodeId)
+  const node = getNode(nodeId)
   const { currentGifFrameCount, currentPreviewFrameIndex } = store.getState().files
 
   if (!node || currentGifFrameCount <= 1) {
     return
   }
 
-  selectCanvasTextNode(nodeId)
+  selectCanvasNode(nodeId)
 
   const currentFrameValue = currentPreviewFrameIndex / (currentGifFrameCount - 1)
 
+  switch (node.type) {
+    case 'picture':
+      store.dispatch(
+        nodeSlice.actions.updatePictureNode({
+          id: nodeId,
+          changes:
+            edge === 'start'
+              ? {
+                  visibleRangeEnd: Math.max(currentFrameValue, node.visibleRangeEnd),
+                  visibleRangeStart: currentFrameValue,
+                }
+              : {
+                  visibleRangeEnd: currentFrameValue,
+                  visibleRangeStart: Math.min(node.visibleRangeStart, currentFrameValue),
+                },
+        }),
+      )
+      break
+    case 'text':
+      store.dispatch(
+        nodeSlice.actions.updateTextNode({
+          id: nodeId,
+          changes:
+            edge === 'start'
+              ? {
+                  visibleRangeEnd: Math.max(currentFrameValue, node.visibleRangeEnd),
+                  visibleRangeStart: currentFrameValue,
+                }
+              : {
+                  visibleRangeEnd: currentFrameValue,
+                  visibleRangeStart: Math.min(node.visibleRangeStart, currentFrameValue),
+                },
+        }),
+      )
+      break
+  }
+}
+
+function getNode(nodeId: string): EditorNode | null {
+  return store.getState().nodes.byId[nodeId] ?? null
+}
+
+async function createPictureNodeFromPicker(): Promise<void> {
+  const file = await pickPictureFile()
+
+  if (!file) {
+    return
+  }
+
+  const nodeCount = store.getState().nodes.allIds.length
+  const offset = nodeCount * 24
+
   store.dispatch(
-    nodeSlice.actions.updateTextNode({
+    nodeSlice.actions.upsertPictureNode(
+      createPictureNode({
+        left: 120 + offset,
+        name: file.name,
+        src: await readFileAsDataUrl(file),
+        top: 114 + offset,
+      }),
+    ),
+  )
+}
+
+async function replacePictureNodeFromPicker(nodeId: string): Promise<void> {
+  const node = getNode(nodeId)
+
+  if (!node || node.type !== 'picture') {
+    return
+  }
+
+  const file = await pickPictureFile()
+
+  if (!file) {
+    return
+  }
+
+  store.dispatch(
+    nodeSlice.actions.updatePictureNode({
       id: nodeId,
-      changes:
-        edge === 'start'
-          ? {
-              visibleRangeEnd: Math.max(currentFrameValue, node.visibleRangeEnd),
-              visibleRangeStart: currentFrameValue,
-            }
-          : {
-              visibleRangeEnd: currentFrameValue,
-              visibleRangeStart: Math.min(node.visibleRangeStart, currentFrameValue),
-            },
+      changes: {
+        name: file.name,
+        src: await readFileAsDataUrl(file),
+      },
     }),
   )
 }
 
-function getTextNode(nodeId: string): TextNode | null {
-  const node = store.getState().nodes.byId[nodeId]
-
-  return node && node.type === 'text' ? node : null
+function pickPictureFile(): Promise<File | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.addEventListener(
+      'change',
+      () => {
+        resolve(input.files?.[0] ?? null)
+      },
+      { once: true },
+    )
+    input.click()
+  })
 }
 
-function normalizePercent(value: number): number {
-  return clampPercent(value) / 100
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.addEventListener(
+      'load',
+      () => {
+        const result = reader.result
+
+        if (typeof result !== 'string') {
+          reject(new Error('Expected a data URL when reading picture node input.'))
+          return
+        }
+
+        resolve(result)
+      },
+      { once: true },
+    )
+    reader.addEventListener('error', () => reject(reader.error ?? new Error('Failed to read picture node input.')), {
+      once: true,
+    })
+    reader.readAsDataURL(file)
+  })
 }
 
 function clampPercent(value: number): number {
@@ -419,5 +656,5 @@ function clampPercent(value: number): number {
 }
 
 function formatFrameIndex(rangeValue: number, frameCount: number): number {
-  return Math.round(clampPercent(rangeValue * 100) / 100 * (frameCount - 1)) + 1
+  return Math.round((clampPercent(rangeValue * 100) / 100) * (frameCount - 1)) + 1
 }
