@@ -5,6 +5,8 @@ import type { AppStore } from './state/redux.ts'
 
 import { OverlayCanvas } from './fabric-canvas.ts'
 
+const IMPACT_FONT_FAMILY = 'Impact'
+
 type NodeSyncOptions = {
   fabricCanvas: OverlayCanvas
   onNodesRendered?: () => void
@@ -86,6 +88,7 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
 
     textObject.set({
       fill: node.fill,
+      fontFamily: IMPACT_FONT_FAMILY,
       fontSize: node.fontSize,
       left: node.left,
       stroke: node.stroke ?? undefined,
@@ -93,12 +96,14 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
       text: node.text,
       top: node.top,
     })
+    textObject.initDimensions()
     textObject.setCoords()
   }
 
   function createTextObject(node: TextNode): FabricText {
     const textObject = new FabricText(node.text, {
       fill: node.fill,
+      fontFamily: IMPACT_FONT_FAMILY,
       fontSize: node.fontSize,
       left: node.left,
       lockRotation: true,

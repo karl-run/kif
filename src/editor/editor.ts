@@ -8,7 +8,8 @@ import { store } from './state/redux.ts'
 
 import { canvasEl, fabricCanvasEl, filePickerInput, filePickerShell, gifHeightEl, gifWidthEl } from './nodes.ts'
 import { OverlayCanvas } from './fabric-canvas.ts'
-import { initializeNodeSync } from './node-sync.ts'
+import { waitForImpactFont } from './fonts.ts'
+import { initializeNodeSync } from './fabric-node-sync.ts'
 
 const canvasContext = canvasEl.getContext('2d', { willReadFrequently: true })!
 const fabricCanvas = new OverlayCanvas(fabricCanvasEl)
@@ -31,15 +32,7 @@ const previewState: {
   playbackTimer: null,
 }
 
-initializeNodeSync({
-  fabricCanvas,
-  onNodesRendered: () => {
-    if (previewState.frames.length > 0) {
-      renderExportPreview()
-    }
-  },
-  store,
-})
+void bootstrapNodeSync()
 
 let previousFileId = store.getState().files.currentFile?.id ?? null
 
@@ -141,6 +134,20 @@ function normalizeDelay(delay: number): number {
   }
 
   return Math.max(delay, 20)
+}
+
+async function bootstrapNodeSync(): Promise<void> {
+  await waitForImpactFont()
+
+  initializeNodeSync({
+    fabricCanvas,
+    onNodesRendered: () => {
+      if (previewState.frames.length > 0) {
+        renderExportPreview()
+      }
+    },
+    store,
+  })
 }
 
 function renderExportPreview(): void {
