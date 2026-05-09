@@ -1,17 +1,146 @@
 ---
 import '../styles/global.css'
+import PauseIcon from '@lucide/astro/icons/pause'
+import PlayIcon from '@lucide/astro/icons/play'
+import SkipBackIcon from '@lucide/astro/icons/skip-back'
+import SkipForwardIcon from '@lucide/astro/icons/skip-forward'
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.ico" />
+    <link rel="preload" href="/impact.ttf" as="font" type="font/ttf" crossorigin />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>Astro</title>
+    <title>Kif</title>
   </head>
   <body>
-    <h1>Landing page</h1>
-    <a href="/app">Go to app</a>
+    <main class="mx-auto flex w-full max-w-[800px] flex-col gap-6 px-4 py-6 sm:px-6">
+      <h1 class="text-3xl font-semibold tracking-tight">Kif - Annotate gif memes</h1>
+
+      <div id="kif-file-picker-shell" class="relative block w-full">
+        <div class="pointer-events-none absolute inset-x-6 top-6 space-y-1">
+          <label for="kif-file-picker" class="block text-lg font-medium text-zinc-900"> Click to choose a GIF </label>
+          <p class="text-sm text-zinc-600">Or drop one here.</p>
+        </div>
+
+        <input
+          id="kif-file-picker"
+          type="file"
+          accept="image/gif"
+          class="block w-full cursor-pointer rounded-3xl border border-dashed border-zinc-300 bg-zinc-50 px-6 pb-6 pt-24 text-sm text-zinc-700 transition hover:border-sky-400 hover:bg-sky-50 file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-700"
+        />
+      </div>
+
+      <div class="w-full overflow-x-auto rounded-2xl border border-zinc-200 bg-zinc-50">
+        <div class="relative inline-flex min-h-80 min-w-full items-center justify-center p-4 sm:p-6">
+          <div class="absolute left-4 top-4 z-20 flex flex-wrap gap-1.5">
+            <button
+              id="toggle-playback-button"
+              type="button"
+              aria-label="Pause preview"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-200 bg-white/95 text-sm leading-none text-sky-700 shadow-sm backdrop-blur-sm transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400"
+            >
+              <span id="playback-icon-pause">
+                <PauseIcon class="h-4 w-4" stroke-width={2.25} />
+              </span>
+              <span id="playback-icon-play" class="hidden">
+                <PlayIcon class="h-4 w-4" stroke-width={2.25} />
+              </span>
+            </button>
+            <button
+              id="step-backward-button"
+              type="button"
+              aria-label="Previous frame"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400"
+            >
+              <span>
+                <SkipBackIcon class="h-4 w-4" stroke-width={2.25} />
+              </span>
+            </button>
+            <button
+              id="step-forward-button"
+              type="button"
+              aria-label="Next frame"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400"
+            >
+              <span>
+                <SkipForwardIcon class="h-4 w-4" stroke-width={2.25} />
+              </span>
+            </button>
+          </div>
+          <div id="canvas-stack" class="relative shrink-0">
+            <div
+              id="gif-width"
+              class="pointer-events-none absolute inset-x-0 -top-4 flex justify-center text-xs font-medium text-zinc-500"
+            >
+            </div>
+            <div
+              id="gif-height"
+              class="pointer-events-none absolute left-full top-1/2 -translate-x-2 -translate-y-1/2 rotate-90 whitespace-nowrap text-xs font-medium text-zinc-500"
+            >
+            </div>
+            <div
+              id="gif-frame-counter"
+              class="pointer-events-none absolute inset-x-0 -bottom-5 flex justify-center text-xs font-medium text-zinc-500"
+            >
+            </div>
+            <canvas id="da-canvas" class="block border border-zinc-200 bg-white shadow-sm" width="240" height="240"
+            ></canvas>
+            <canvas id="fabric-canvas" class="absolute inset-0" width="240" height="240"></canvas>
+          </div>
+        </div>
+      </div>
+      <section class="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold text-zinc-900">Text overlays</h2>
+            <p class="text-sm text-zinc-600">Edit the overlay text nodes that are synced to the Fabric canvas.</p>
+          </div>
+          <button
+            id="add-text-node"
+            type="button"
+            class="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
+          >
+            Add new text
+          </button>
+        </div>
+        <div id="text-node-controls" class="space-y-3 text-sm text-zinc-600"></div>
+      </section>
+      <button
+        id="export-gif-button"
+        type="button"
+        class="w-full rounded-2xl bg-green-600 px-6 py-4 text-lg font-semibold text-white shadow-sm transition hover:bg-green-500 disabled:cursor-not-allowed disabled:bg-zinc-300"
+      >
+        Export
+      </button>
+      <dialog id="exported-gif-dialog" class="max-w-[min(90vw,900px)] rounded-2xl p-0 shadow-xl backdrop:bg-black/50">
+        <div class="space-y-4 p-4 sm:p-6">
+          <div class="flex items-center justify-between gap-4">
+            <h2 class="text-lg font-semibold text-zinc-900">Exported GIF</h2>
+            <form method="dialog">
+              <button
+                type="submit"
+                class="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-100"
+              >
+                Close
+              </button>
+            </form>
+          </div>
+          <img id="exported-gif-image" alt="Exported GIF preview" class="mx-auto max-h-[70vh] max-w-full border border-zinc-200 bg-zinc-50" />
+          <a
+            id="exported-gif-download"
+            download="kif-export.gif"
+            class="inline-flex rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
+          >
+            Download GIF
+          </a>
+        </div>
+      </dialog>
+      <script src="@editor/editor.ts"></script>
+      <script src="@editor/controls.ts"></script>
+      <script src="@editor/drop.ts"></script>
+    </main>
   </body>
 </html>
