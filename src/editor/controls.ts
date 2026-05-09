@@ -2,8 +2,29 @@ import { addTextNodeButtonEl, textNodeControlsEl } from './nodes.ts'
 import { createTextNode, nodeSlice, type TextNode } from './state/node-slice.ts'
 import { store } from './state/redux.ts'
 
+type RangeHandle = 'start' | 'end'
+
 const textControlRows = new Map<string, HTMLDivElement>()
 let previousNodes = store.getState().nodes
+let previousFrameCount = store.getState().files.currentGifFrameCount
+let activeRangeDrag:
+  | {
+      handle: RangeHandle
+      nodeId: string
+      sliderShell: HTMLDivElement
+    }
+  | null = null
+
+document.addEventListener('pointermove', (event) => {
+  if (!activeRangeDrag) {
+    return
+  }
+
+  updateRangeFromPointer(activeRangeDrag.nodeId, activeRangeDrag.handle, activeRangeDrag.sliderShell, event.clientX)
+})
+
+document.addEventListener('pointerup', stopRangeDrag)
+document.addEventListener('pointercancel', stopRangeDrag)
 
 if (addTextNodeButtonEl && textNodeControlsEl) {
   addTextNodeButtonEl.addEventListener('click', () => {
@@ -24,11 +45,12 @@ if (addTextNodeButtonEl && textNodeControlsEl) {
   store.subscribe(() => {
     const state = store.getState()
 
-    if (state.nodes === previousNodes) {
+    if (state.nodes === previousNodes && state.files.currentGifFrameCount === previousFrameCount) {
       return
     }
 
     previousNodes = state.nodes
+    previousFrameCount = state.files.currentGifFrameCount
     syncTextNodeControls()
   })
 
@@ -36,8 +58,10 @@ if (addTextNodeButtonEl && textNodeControlsEl) {
 }
 
 function syncTextNodeControls(): void {
-  const { allIds, byId } = store.getState().nodes
+  const state = store.getState()
+  const { allIds, byId } = state.nodes
   const activeIds = new Set(allIds)
+  const frameCount = state.files.currentGifFrameCount
 
   for (const nodeId of textControlRows.keys()) {
     if (!activeIds.has(nodeId)) {
@@ -67,7 +91,7 @@ function syncTextNodeControls(): void {
       textControlRows.set(node.id, row)
     }
 
-    updateTextNodeRow(row, node, index)
+    updateTextNodeRow(row, node, index, frameCount)
     const currentChild = textNodeControlsEl.children[index]
 
     if (currentChild !== row) {
@@ -134,10 +158,65 @@ function createTextNodeRow(node: TextNode): HTMLDivElement {
   })
   row.append(input)
 
+  const visibilitySection = document.createElement('div')
+  visibilitySection.className = 'mt-3 space-y-2'
+
+  const visibilityHeader = document.createElement('div')
+  visibilityHeader.className = 'flex items-center justify-between gap-3'
+
+  const visibilityLabel = document.createElement('div')
+  visibilityLabel.className = 'text-xs font-medium uppercase tracking-wide text-zinc-500'
+  visibilityLabel.textContent = 'Visible range'
+  visibilityHeader.append(visibilityLabel)
+
+  const visibilityValue = document.createElement('div')
+  visibilityValue.className = 'text-xs text-zinc-600'
+  visibilityValue.dataset.role = 'visibility-value'
+  visibilityHeader.append(visibilityValue)
+
+  visibilitySection.append(visibilityHeader)
+
+  const sliderShell = document.createElement('div')
+  sliderShell.className = 'relative h-9 touch-none'
+
+  const sliderTrack = document.createElement('div')
+  sliderTrack.className = 'absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-zinc-200'
+  sliderShell.append(sliderTrack)
+
+  const sliderFill = document.createElement('div')
+  sliderFill.className = 'absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-sky-400'
+  sliderFill.dataset.role = 'visibility-fill'
+  sliderShell.append(sliderFill)
+
+  const startHandle = document.createElement('button')
+  startHandle.type = 'button'
+  startHandle.className =
+    'absolute top-1/2 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-500 bg-white shadow-sm'
+  startHandle.setAttribute('aria-label', 'Start of visible range')
+  startHandle.dataset.role = 'visibility-start-handle'
+  startHandle.addEventListener('pointerdown', (event) => {
+    beginRangeDrag(node.id, 'start', sliderShell, event)
+  })
+  sliderShell.append(startHandle)
+
+  const endHandle = document.createElement('button')
+  endHandle.type = 'button'
+  endHandle.className =
+    'absolute top-1/2 z-20 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-500 bg-white shadow-sm'
+  endHandle.setAttribute('aria-label', 'End of visible range')
+  endHandle.dataset.role = 'visibility-end-handle'
+  endHandle.addEventListener('pointerdown', (event) => {
+    beginRangeDrag(node.id, 'end', sliderShell, event)
+  })
+  sliderShell.append(endHandle)
+
+  visibilitySection.append(sliderShell)
+  row.append(visibilitySection)
+
   return row
 }
 
-function updateTextNodeRow(row: HTMLDivElement, node: TextNode, index: number): void {
+function updateTextNodeRow(row: HTMLDivElement, node: TextNode, index: number, frameCount: number): void {
   row.dataset.nodeId = node.id
 
   const title = row.querySelector('[data-role="title"]')
@@ -148,6 +227,36 @@ function updateTextNodeRow(row: HTMLDivElement, node: TextNode, index: number): 
   const input = row.querySelector('[data-role="text-input"]')
   if (input instanceof HTMLInputElement && input.value !== node.text) {
     input.value = node.text
+  }
+
+  const startHandle = row.querySelector('[data-role="visibility-start-handle"]')
+  if (startHandle instanceof HTMLButtonElement) {
+    startHandle.style.left = `${clampPercent(node.visibleRangeStart * 100)}%`
+    startHandle.disabled = frameCount <= 1
+    startHandle.style.opacity = frameCount > 1 ? '1' : '0.5'
+  }
+
+  const endHandle = row.querySelector('[data-role="visibility-end-handle"]')
+  if (endHandle instanceof HTMLButtonElement) {
+    endHandle.style.left = `${clampPercent(node.visibleRangeEnd * 100)}%`
+    endHandle.disabled = frameCount <= 1
+    endHandle.style.opacity = frameCount > 1 ? '1' : '0.5'
+  }
+
+  const visibilityFill = row.querySelector('[data-role="visibility-fill"]')
+  if (visibilityFill instanceof HTMLDivElement) {
+    const startPercent = clampPercent(node.visibleRangeStart * 100)
+    const endPercent = clampPercent(node.visibleRangeEnd * 100)
+    visibilityFill.style.left = `${startPercent}%`
+    visibilityFill.style.width = `${Math.max(endPercent - startPercent, 0)}%`
+  }
+
+  const visibilityValue = row.querySelector('[data-role="visibility-value"]')
+  if (visibilityValue instanceof HTMLDivElement) {
+    visibilityValue.textContent =
+      frameCount > 1
+        ? `Frames ${formatFrameIndex(node.visibleRangeStart, frameCount)}-${formatFrameIndex(node.visibleRangeEnd, frameCount)}`
+        : 'Load a GIF to set visibility'
   }
 }
 
@@ -168,7 +277,72 @@ function duplicateTextNode(nodeId: string): void {
         strokeWidth: node.strokeWidth,
         text: node.text,
         top: node.top + 24,
+        visibleRangeEnd: node.visibleRangeEnd,
+        visibleRangeStart: node.visibleRangeStart,
       }),
     ),
   )
+}
+
+function beginRangeDrag(nodeId: string, handle: RangeHandle, sliderShell: HTMLDivElement, event: PointerEvent): void {
+  if (store.getState().files.currentGifFrameCount <= 1) {
+    return
+  }
+
+  activeRangeDrag = { handle, nodeId, sliderShell }
+  event.preventDefault()
+  updateRangeFromPointer(nodeId, handle, sliderShell, event.clientX)
+}
+
+function updateRangeFromPointer(nodeId: string, handle: RangeHandle, sliderShell: HTMLDivElement, clientX: number): void {
+  const node = getTextNode(nodeId)
+
+  if (!node) {
+    activeRangeDrag = null
+    return
+  }
+
+  const sliderBounds = sliderShell.getBoundingClientRect()
+
+  if (sliderBounds.width <= 0) {
+    return
+  }
+
+  const nextValue = Math.min(1, Math.max(0, (clientX - sliderBounds.left) / sliderBounds.width))
+
+  store.dispatch(
+    nodeSlice.actions.updateTextNode({
+      id: nodeId,
+      changes:
+        handle === 'start'
+          ? {
+              visibleRangeStart: Math.min(nextValue, node.visibleRangeEnd),
+            }
+          : {
+              visibleRangeEnd: Math.max(nextValue, node.visibleRangeStart),
+            },
+    }),
+  )
+}
+
+function stopRangeDrag(): void {
+  activeRangeDrag = null
+}
+
+function getTextNode(nodeId: string): TextNode | null {
+  const node = store.getState().nodes.byId[nodeId]
+
+  return node && node.type === 'text' ? node : null
+}
+
+function normalizePercent(value: number): number {
+  return clampPercent(value) / 100
+}
+
+function clampPercent(value: number): number {
+  return Math.min(100, Math.max(0, value))
+}
+
+function formatFrameIndex(rangeValue: number, frameCount: number): number {
+  return Math.round(clampPercent(rangeValue * 100) / 100 * (frameCount - 1)) + 1
 }

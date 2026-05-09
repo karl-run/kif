@@ -13,11 +13,17 @@ type NodeSyncOptions = {
   store: AppStore
 }
 
+type FrameContext = {
+  frameIndex: number
+  frameCount: number
+}
+
 export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: NodeSyncOptions) {
   const fabricTextNodes = new Map<string, FabricText>()
   const fabricTextDisposers = new Map<string, Array<() => void>>()
   let isSyncingNodesToCanvas = false
   let previousNodes = store.getState().nodes
+  let currentFrameContext: FrameContext = { frameCount: 0, frameIndex: 0 }
 
   const syncNodesToCanvas = (): void => {
     if (isSyncingNodesToCanvas) {
@@ -49,6 +55,7 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
       isSyncingNodesToCanvas = false
     }
 
+    applyFrameVisibility(currentFrameContext)
     fabricCanvas.renderAll()
     onNodesRendered?.()
   }
@@ -74,7 +81,27 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
         removeTextNodeFromCanvas(nodeId)
       }
     },
+    renderFrame(frameIndex: number, frameCount: number) {
+      currentFrameContext = { frameCount, frameIndex }
+      applyFrameVisibility(currentFrameContext)
+      fabricCanvas.renderAll()
+    },
     sync: syncNodesToCanvas,
+    toCanvasElementForFrame(frameIndex: number, frameCount: number): HTMLCanvasElement {
+      const previousFrameContext = currentFrameContext
+
+      currentFrameContext = { frameCount, frameIndex }
+      applyFrameVisibility(currentFrameContext)
+      fabricCanvas.renderAll()
+
+      const overlayCanvas = fabricCanvas.toCanvasElement()
+
+      currentFrameContext = previousFrameContext
+      applyFrameVisibility(currentFrameContext)
+      fabricCanvas.renderAll()
+
+      return overlayCanvas
+    },
   }
 
   function upsertTextNodeOnCanvas(node: TextNode): void {
@@ -95,6 +122,7 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
       strokeWidth: node.strokeWidth,
       text: node.text,
       top: node.top,
+      visible: isNodeVisibleAtFrame(node, currentFrameContext),
     })
     textObject.initDimensions()
     textObject.setCoords()
@@ -112,6 +140,7 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
       stroke: node.stroke ?? undefined,
       strokeWidth: node.strokeWidth,
       top: node.top,
+      visible: isNodeVisibleAtFrame(node, currentFrameContext),
     })
 
     const syncNodeFromObject = () => {
@@ -160,4 +189,33 @@ export function initializeNodeSync({ fabricCanvas, onNodesRendered, store }: Nod
     fabricTextNodes.delete(nodeId)
     fabricCanvas.remove(textObject)
   }
+
+  function applyFrameVisibility(frameContext: FrameContext): void {
+    const { byId } = store.getState().nodes
+
+    for (const [nodeId, textObject] of fabricTextNodes) {
+      const node = byId[nodeId]
+
+      textObject.visible = Boolean(node && node.type === 'text' && isNodeVisibleAtFrame(node, frameContext))
+      textObject.setCoords()
+    }
+  }
+}
+
+function isNodeVisibleAtFrame(node: TextNode, frameContext: FrameContext): boolean {
+  if (frameContext.frameCount <= 1) {
+    return true
+  }
+
+  const frameSpan = frameContext.frameCount - 1
+  const startFrame = Math.round(clamp01(node.visibleRangeStart) * frameSpan)
+  const endFrame = Math.round(clamp01(node.visibleRangeEnd) * frameSpan)
+  const lowerBound = Math.min(startFrame, endFrame)
+  const upperBound = Math.max(startFrame, endFrame)
+
+  return frameContext.frameIndex >= lowerBound && frameContext.frameIndex <= upperBound
+}
+
+function clamp01(value: number): number {
+  return Math.min(1, Math.max(0, value))
 }

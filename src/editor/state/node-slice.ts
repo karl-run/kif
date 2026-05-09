@@ -6,6 +6,8 @@ export interface TextNode {
   text: string
   left: number
   top: number
+  visibleRangeEnd: number
+  visibleRangeStart: number
   fontSize: number
   fill: string
   stroke: string | null
@@ -30,6 +32,8 @@ export function createTextNode(overrides: Partial<Omit<TextNode, 'id' | 'type'>>
     text: 'Hello, Kif!',
     left: 120,
     top: 114,
+    visibleRangeEnd: 1,
+    visibleRangeStart: 0,
     fontSize: 50,
     fill: '#ffffff',
     stroke: '#000000',

@@ -2,7 +2,12 @@ import { applyPalette, GIFEncoder, quantize } from 'gifenc'
 
 import type { GifFrame } from './types.ts'
 
-export function exportGif(frames: GifFrame[], width: number, height: number, overlayCanvas: HTMLCanvasElement): Blob {
+export function exportGif(
+  frames: GifFrame[],
+  width: number,
+  height: number,
+  getOverlayCanvas: (frameIndex: number) => HTMLCanvasElement,
+): Blob {
   const exportCanvas = document.createElement('canvas')
   exportCanvas.width = width
   exportCanvas.height = height
@@ -15,9 +20,9 @@ export function exportGif(frames: GifFrame[], width: number, height: number, ove
 
   const encoder = GIFEncoder()
 
-  for (const frame of frames) {
+  frames.forEach((frame, frameIndex) => {
     exportContext.putImageData(frame.imageData, 0, 0)
-    exportContext.drawImage(overlayCanvas, 0, 0)
+    exportContext.drawImage(getOverlayCanvas(frameIndex), 0, 0)
 
     const imageData = exportContext.getImageData(0, 0, width, height)
     const palette = quantize(imageData.data, 256)
@@ -28,7 +33,7 @@ export function exportGif(frames: GifFrame[], width: number, height: number, ove
       palette,
       repeat: 0,
     })
-  }
+  })
 
   encoder.finish()
 

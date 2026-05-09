@@ -13,6 +13,7 @@ import { initializeNodeSync } from './fabric-node-sync.ts'
 
 const canvasContext = canvasEl.getContext('2d', { willReadFrequently: true })!
 const fabricCanvas = new OverlayCanvas(fabricCanvasEl)
+let nodeSync: ReturnType<typeof initializeNodeSync> | null = null
 
 if (canvasContext == null) {
   throw new Error('A 2D canvas context is required to preview GIFs.')
@@ -84,6 +85,7 @@ async function syncPreviewToState(): Promise<void> {
   previewState.currentFileId = currentFileRef.id
   previewState.currentFrameIndex = 0
   previewState.frames = decodedGif.frames
+  store.dispatch(fileSlice.actions.gifFrameCount(decodedGif.frames.length))
 
   canvasEl.width = decodedGif.width
   canvasEl.height = decodedGif.height
@@ -105,6 +107,7 @@ function renderFrame(frameIndex: number): void {
 
   canvasContext.putImageData(frame.imageData, 0, 0)
   previewState.currentFrameIndex = frameIndex
+  nodeSync?.renderFrame(frameIndex, previewState.frames.length)
 }
 
 function scheduleNextFrame(): void {
@@ -139,7 +142,7 @@ function normalizeDelay(delay: number): number {
 async function bootstrapNodeSync(): Promise<void> {
   await waitForImpactFont()
 
-  initializeNodeSync({
+  nodeSync = initializeNodeSync({
     fabricCanvas,
     onNodesRendered: () => {
       if (previewState.frames.length > 0) {
@@ -151,8 +154,9 @@ async function bootstrapNodeSync(): Promise<void> {
 }
 
 function renderExportPreview(): void {
-  const overlayCanvas = fabricCanvas.toCanvasElement()
-  const exportedGif = exportGif(previewState.frames, canvasEl.width, canvasEl.height, overlayCanvas)
+  const exportedGif = exportGif(previewState.frames, canvasEl.width, canvasEl.height, (frameIndex) =>
+    nodeSync ? nodeSync.toCanvasElementForFrame(frameIndex, previewState.frames.length) : fabricCanvas.toCanvasElement(),
+  )
   const exportedGifUrl = URL.createObjectURL(exportedGif)
   const exportedGifImage = getExportedGifImage()
 
@@ -162,6 +166,7 @@ function renderExportPreview(): void {
 
   previewState.exportedGifUrl = exportedGifUrl
   exportedGifImage.src = exportedGifUrl
+  nodeSync?.renderFrame(previewState.currentFrameIndex, previewState.frames.length)
 }
 
 function getExportedGifImage(): HTMLImageElement {
