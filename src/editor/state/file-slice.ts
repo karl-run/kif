@@ -7,7 +7,6 @@ export interface CounterState {
   currentGifFrameCount: number
   currentPreviewFrameIndex: number
   isPreviewPlaying: boolean
-  fileHistory: Array<FileRef | null>
 }
 
 const initialState: CounterState = {
@@ -15,7 +14,6 @@ const initialState: CounterState = {
   currentGifFrameCount: 0,
   currentPreviewFrameIndex: 0,
   isPreviewPlaying: false,
-  fileHistory: [],
 }
 
 export const fileSlice = createSlice({
@@ -33,11 +31,6 @@ export const fileSlice = createSlice({
       }
 
       if (state.currentFile?.id === nextFile.id) return
-
-      state.fileHistory = state.fileHistory.filter((file) => file?.id !== nextFile.id)
-      if (state.currentFile) {
-        state.fileHistory.push(state.currentFile)
-      }
 
       state.currentFile = nextFile
       state.currentGifFrameCount = 0

@@ -9,7 +9,7 @@ const PERSISTED_STATE_VERSION = 1
 
 type PersistedState = {
   version: number
-  files: Pick<CounterState, 'currentFile' | 'fileHistory'>
+  files: Pick<CounterState, 'currentFile'>
   nodes: NodeState
 }
 
@@ -43,7 +43,6 @@ function loadPersistedState():
       files: {
         ...initialFilesState,
         currentFile: parsedState.files?.currentFile ?? initialFilesState.currentFile,
-        fileHistory: parsedState.files?.fileHistory ?? initialFilesState.fileHistory,
       },
       nodes: parsedState.nodes ?? initialNodesState,
     }
@@ -73,7 +72,6 @@ store.subscribe(() => {
     version: PERSISTED_STATE_VERSION,
     files: {
       currentFile: state.files.currentFile,
-      fileHistory: state.files.fileHistory,
     },
     nodes: state.nodes,
   } satisfies PersistedState)
