@@ -3,6 +3,8 @@
   import { dispatch, selectState } from '@editor/state/svelte.ts'
   import { pickPictureFile, readFileAsDataUrl } from '@editor/picture-picker.ts'
 
+  import OverlayControlsList from './OverlayControlsList.svelte'
+
   const nodes = selectState((state) => state.nodes)
 
   const createTextOverlay = () => {
@@ -66,5 +68,5 @@
       </button>
     </div>
   </div>
-  <div id="overlay-node-controls" class="space-y-3 text-sm text-zinc-600"></div>
+  <OverlayControlsList />
 </section>

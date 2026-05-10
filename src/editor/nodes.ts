@@ -5,7 +5,6 @@ export const gifHeightEl = document.getElementById('gif-height') as HTMLDivEleme
 export const gifFrameCounterEl = document.getElementById('gif-frame-counter') as HTMLDivElement
 export const gifWidthEl = document.getElementById('gif-width') as HTMLDivElement
 export const previewStageEl = document.getElementById('preview-stage') as HTMLDivElement
-export const overlayNodeControlsEl = document.getElementById('overlay-node-controls') as HTMLDivElement
 export const previewTimelineThumbnailsEl = document.getElementById('preview-timeline-thumbnails') as HTMLDivElement
 export const previewViewportInnerEl = document.getElementById('preview-viewport-inner') as HTMLDivElement
 export const exportGifButtonEl = document.getElementById('export-gif-button') as HTMLButtonElement
