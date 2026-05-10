@@ -39,6 +39,10 @@
     await setCurrentFile(file)
   }
 
+  const handleFileInputChange = () => {
+    void syncPickedFile()
+  }
+
   const handleDragEnter = (event: DragEvent) => {
     if (!event.dataTransfer?.types.includes('Files')) {
       return
@@ -118,6 +122,6 @@
     class="block w-full cursor-pointer rounded-3xl border border-dashed border-zinc-300 bg-zinc-50 px-6 pb-6 pt-24 text-sm text-zinc-700 transition hover:border-sky-400 hover:bg-sky-50 file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-sky-500 dark:hover:bg-zinc-900 dark:file:bg-zinc-100 dark:file:text-zinc-900 dark:hover:file:bg-white"
     class:border-sky-400={isDragging}
     class:bg-sky-50={isDragging}
-    onchange={syncPickedFile}
+    onchange={handleFileInputChange}
   />
 </label>
