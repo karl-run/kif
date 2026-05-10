@@ -1,11 +1,14 @@
 <script lang="ts">
   import { onMount } from 'svelte'
 
+  import { requestPreviewSync } from '@editor/preview-controller.ts'
   import { rememberFile } from '@editor/state/file-registry.ts'
   import { fileSlice } from '@editor/state/file-slice.ts'
   import { store } from '@editor/state/redux.ts'
 
   const inputId = 'kif-file-picker-svelte'
+  const RESTORE_ATTEMPT_DELAY_MS = 150
+  const RESTORE_ATTEMPT_LIMIT = 8
 
   let inputEl: HTMLInputElement
   let isDragging = $state(false)
@@ -14,8 +17,21 @@
     store.dispatch(fileSlice.actions.file(file ? rememberFile(file) : null))
   }
 
-  const syncPickedFile = () => {
-    setCurrentFile(inputEl?.files?.[0] ?? null)
+  const syncPickedFile = async (options?: { preserveWhenEmpty?: boolean }) => {
+    const file = inputEl?.files?.[0] ?? null
+
+    if (!file && options?.preserveWhenEmpty) {
+      return
+    }
+
+    const fileRef = file ? rememberFile(file) : null
+
+    if (fileRef && store.getState().files.currentFile?.id === fileRef.id) {
+      await requestPreviewSync()
+      return
+    }
+
+    store.dispatch(fileSlice.actions.file(fileRef))
   }
 
   const handleDragEnter = (event: DragEvent) => {
@@ -45,10 +61,27 @@
   }
 
   onMount(() => {
-    const handlePageShow = () => {
+    let remainingRestoreAttempts = RESTORE_ATTEMPT_LIMIT
+
+    const restorePickedFile = () => {
       window.requestAnimationFrame(() => {
-        syncPickedFile()
+        syncPickedFile({ preserveWhenEmpty: true })
+
+        const currentFileId = store.getState().files.currentFile?.id ?? null
+        const restoredInputFile = inputEl?.files?.[0] ?? null
+
+        if (currentFileId === null || restoredInputFile || remainingRestoreAttempts <= 0) {
+          return
+        }
+
+        remainingRestoreAttempts -= 1
+        window.setTimeout(restorePickedFile, RESTORE_ATTEMPT_DELAY_MS)
       })
+    }
+
+    const handlePageShow = () => {
+      remainingRestoreAttempts = RESTORE_ATTEMPT_LIMIT
+      restorePickedFile()
     }
 
     handlePageShow()

@@ -4,6 +4,7 @@ import { getFramePlaybackDelay } from '@gif/timing.ts'
 import type { GifFrame } from '@gif/types.ts'
 
 import { registerExportController } from './export-controller.ts'
+import { registerPreviewController } from './preview-controller.ts'
 import { getFile } from './state/file-registry.ts'
 import { fileSlice } from './state/file-slice.ts'
 import { store } from './state/redux.ts'
@@ -74,6 +75,10 @@ registerExportController({
   onDialogClosed: handleExportDialogClosed,
 })
 
+registerPreviewController({
+  syncPreview: () => syncPreviewToState({ force: true }),
+})
+
 void syncPreviewToState()
 
 store.subscribe(() => {
@@ -99,10 +104,10 @@ store.subscribe(() => {
   }
 })
 
-async function syncPreviewToState(): Promise<void> {
+async function syncPreviewToState(options?: { force?: boolean }): Promise<void> {
   const currentFileRef = store.getState().files.currentFile
 
-  if (!currentFileRef || currentFileRef.id === previewState.currentFileId) {
+  if (!currentFileRef || (!options?.force && currentFileRef.id === previewState.currentFileId)) {
     return
   }
 
