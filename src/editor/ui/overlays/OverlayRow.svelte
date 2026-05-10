@@ -78,7 +78,7 @@
   const handleTextInput = (event: Event) => {
     const input = event.currentTarget
 
-    if (!(input instanceof HTMLInputElement) || node.type !== 'text') {
+    if (!(input instanceof HTMLTextAreaElement) || node.type !== 'text') {
       return
     }
 
@@ -142,14 +142,13 @@
   </div>
 
   {#if textNode}
-    <input
-      type="text"
+    <textarea
       class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:ring-sky-950"
       placeholder="Write overlay text"
       value={textNode.text}
       onfocus={handleTextFocus}
       oninput={handleTextInput}
-    />
+    ></textarea>
   {:else if pictureNode}
     <div class="space-y-3">
       <div
