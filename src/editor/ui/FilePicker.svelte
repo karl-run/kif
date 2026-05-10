@@ -8,7 +8,7 @@
   const inputId = 'kif-file-picker-svelte'
 
   let inputEl: HTMLInputElement
-  let isDragging = false
+  let isDragging = $state(false)
 
   const setCurrentFile = (file: File | null | undefined) => {
     store.dispatch(fileSlice.actions.file(file ? rememberFile(file) : null))
@@ -35,8 +35,13 @@
   }
 
   const handleDrop = (event: DragEvent) => {
+    event.preventDefault()
     isDragging = false
     setCurrentFile(event.dataTransfer?.files?.[0] ?? null)
+  }
+
+  const handleDragOver = (event: DragEvent) => {
+    event.preventDefault()
   }
 
   onMount(() => {
@@ -60,10 +65,10 @@
   data-file-picker-shell
   class="relative block w-full"
   for={inputId}
-  on:dragenter={handleDragEnter}
-  on:dragleave={handleDragLeave}
-  on:dragover|preventDefault
-  on:drop|preventDefault={handleDrop}
+  ondragenter={handleDragEnter}
+  ondragleave={handleDragLeave}
+  ondragover={handleDragOver}
+  ondrop={handleDrop}
 >
   <span class="pointer-events-none absolute inset-x-6 top-6 block">
     <span class="block text-lg font-medium text-zinc-900 dark:text-zinc-100">Click to choose a GIF</span>
@@ -78,6 +83,6 @@
     class="block w-full cursor-pointer rounded-3xl border border-dashed border-zinc-300 bg-zinc-50 px-6 pb-6 pt-24 text-sm text-zinc-700 transition hover:border-sky-400 hover:bg-sky-50 file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-sky-500 dark:hover:bg-zinc-900 dark:file:bg-zinc-100 dark:file:text-zinc-900 dark:hover:file:bg-white"
     class:border-sky-400={isDragging}
     class:bg-sky-50={isDragging}
-    on:change={syncPickedFile}
+    onchange={syncPickedFile}
   />
 </label>

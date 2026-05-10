@@ -40,7 +40,7 @@
         aria-label={$files.isPreviewPlaying ? 'Pause preview' : 'Play preview'}
         class="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-200 bg-white/95 text-sm leading-none text-sky-700 shadow-sm backdrop-blur-sm transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400 dark:border-sky-800 dark:bg-zinc-950/90 dark:text-sky-300 dark:hover:bg-zinc-900 dark:disabled:border-zinc-800 dark:disabled:bg-zinc-950/80 dark:disabled:text-zinc-600"
         disabled={$files.currentGifFrameCount === 0}
-        on:click={togglePlayback}
+        onclick={togglePlayback}
       >
         {#if $files.isPreviewPlaying}
           <Pause aria-hidden="true" class="h-4 w-4" strokeWidth={2.25} />
@@ -53,7 +53,7 @@
         aria-label="Previous frame"
         class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950/90 dark:text-zinc-200 dark:hover:bg-zinc-900 dark:disabled:border-zinc-800 dark:disabled:bg-zinc-950/80 dark:disabled:text-zinc-600"
         disabled={$files.currentGifFrameCount === 0}
-        on:click={() => stepFrame(-1)}
+        onclick={() => stepFrame(-1)}
       >
         <SkipBack aria-hidden="true" class="h-4 w-4" strokeWidth={2.25} />
       </button>
@@ -62,7 +62,7 @@
         aria-label="Next frame"
         class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950/90 dark:text-zinc-200 dark:hover:bg-zinc-900 dark:disabled:border-zinc-800 dark:disabled:bg-zinc-950/80 dark:disabled:text-zinc-600"
         disabled={$files.currentGifFrameCount === 0}
-        on:click={() => stepFrame(1)}
+        onclick={() => stepFrame(1)}
       >
         <SkipForward aria-hidden="true" class="h-4 w-4" strokeWidth={2.25} />
       </button>

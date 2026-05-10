@@ -6,7 +6,7 @@
   import { fileSlice } from '@editor/state/file-slice.ts'
   import { store } from '@editor/state/redux.ts'
 
-  let isDragging = false
+  let isDragging = $state(false)
 
   const setCurrentFile = (file: File) => {
     store.dispatch(fileSlice.actions.file(rememberFile(file)))

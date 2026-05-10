@@ -49,7 +49,7 @@
   const timelineProgress = () => ($files.currentGifFrameCount > 1 ? $files.currentPreviewFrameIndex / sliderMax() : 0)
 </script>
 
-<svelte:document on:pointerup={finishTimelineScrub} on:pointercancel={finishTimelineScrub} />
+<svelte:document onpointerup={finishTimelineScrub} onpointercancel={finishTimelineScrub} />
 
 <div
   id="preview-timeline-shell"
@@ -85,9 +85,9 @@
       aria-label="Preview timeline"
       class="kif-timeline-slider absolute inset-0 z-30 h-full w-full cursor-ew-resize bg-transparent disabled:cursor-not-allowed"
       disabled={$files.currentGifFrameCount === 0}
-      on:pointerdown={handleTimelinePointerDown}
-      on:input={handleTimelineInput}
-      on:change={finishTimelineScrub}
+      onpointerdown={handleTimelinePointerDown}
+      oninput={handleTimelineInput}
+      onchange={finishTimelineScrub}
     />
   </div>
 </div>
