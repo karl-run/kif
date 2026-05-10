@@ -1,7 +1,7 @@
 import { FabricImage, FabricText } from 'fabric'
 
-import { nodeSlice, type EditorNode, type PictureNode, type TextNode } from './state/node-slice.ts'
-import type { AppStore } from './state/redux.ts'
+import { nodeSlice, type EditorNode, type PictureNode, type TextNode } from '../state/node-slice.ts'
+import type { AppStore } from '../state/redux.ts'
 
 import { OverlayCanvas } from './fabric-canvas.ts'
 

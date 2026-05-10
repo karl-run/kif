@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { selectCanvasNode } from '@editor/fabric-node-sync.ts'
+  import { selectCanvasNode } from '@editor/fabric/fabric-node-sync.ts'
   import { pickPictureFile, readFileAsDataUrl } from '@editor/picture-picker.ts'
   import {
     createPictureNode,

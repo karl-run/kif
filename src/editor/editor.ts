@@ -19,9 +19,9 @@ import {
   previewTimelineThumbnailsEl,
   previewViewportInnerEl,
 } from './nodes.ts'
-import { OverlayCanvas } from './fabric-canvas.ts'
+import { OverlayCanvas } from './fabric/fabric-canvas.ts'
 import { waitForImpactFont } from './fonts.ts'
-import { initializeNodeSync } from './fabric-node-sync.ts'
+import { initializeNodeSync } from './fabric/fabric-node-sync.ts'
 
 const canvasContext = canvasEl.getContext('2d', { willReadFrequently: true })!
 const fabricCanvas = new OverlayCanvas(fabricCanvasEl)

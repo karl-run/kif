@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { selectCanvasNode } from '@editor/fabric-node-sync.ts'
+  import { selectCanvasNode } from '@editor/fabric/fabric-node-sync.ts'
   import { nodeSlice, type EditorNode } from '@editor/state/node-slice.ts'
   import { dispatch } from '@editor/state/svelte.ts'
 
