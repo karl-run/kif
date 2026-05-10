@@ -9,7 +9,7 @@
 
 <GlobalDropZone />
 
-<div class="container mx-auto grid grid-cols-1 xl:grid-cols-2 gap-4">
+<div class="container mx-auto grid grid-cols-1 xl:grid-cols-2 gap-4 p-2 md:4-8">
   <div><FilePicker /></div>
   <div><PreviewViewport /></div>
   <div><PreviewTimeline /></div>
