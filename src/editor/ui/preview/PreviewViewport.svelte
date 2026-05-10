@@ -4,28 +4,26 @@
   import SkipBack from '@lucide/svelte/icons/skip-back'
   import SkipForward from '@lucide/svelte/icons/skip-forward'
 
-  import { fileSlice } from '@editor/state/file-slice.ts'
-  import { dispatch, selectState } from '@editor/state/svelte.ts'
-
-  const files = selectState((state) => state.files)
+  import { previewStore, setPreviewFrameIndex, setPreviewPlaying } from '@editor/state/preview.ts'
 
   const stepFrame = (direction: -1 | 1) => {
-    if ($files.currentGifFrameCount === 0) {
+    if ($previewStore.currentGifFrameCount === 0) {
       return
     }
 
     const nextFrameIndex =
-      ($files.currentPreviewFrameIndex + direction + $files.currentGifFrameCount) % $files.currentGifFrameCount
+      ($previewStore.currentPreviewFrameIndex + direction + $previewStore.currentGifFrameCount) %
+      $previewStore.currentGifFrameCount
 
-    dispatch(fileSlice.actions.previewFrameIndex(nextFrameIndex))
+    setPreviewFrameIndex(nextFrameIndex)
   }
 
   const togglePlayback = () => {
-    if ($files.currentGifFrameCount === 0) {
+    if ($previewStore.currentGifFrameCount === 0) {
       return
     }
 
-    dispatch(fileSlice.actions.previewPlaying(!$files.isPreviewPlaying))
+    setPreviewPlaying(!$previewStore.isPreviewPlaying)
   }
 </script>
 
@@ -37,12 +35,12 @@
     <div class="absolute left-4 top-4 z-20 flex flex-wrap gap-1.5">
       <button
         type="button"
-        aria-label={$files.isPreviewPlaying ? 'Pause preview' : 'Play preview'}
+        aria-label={$previewStore.isPreviewPlaying ? 'Pause preview' : 'Play preview'}
         class="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-200 bg-white/95 text-sm leading-none text-sky-700 shadow-sm backdrop-blur-sm transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400 dark:border-sky-800 dark:bg-zinc-950/90 dark:text-sky-300 dark:hover:bg-zinc-900 dark:disabled:border-zinc-800 dark:disabled:bg-zinc-950/80 dark:disabled:text-zinc-600"
-        disabled={$files.currentGifFrameCount === 0}
+        disabled={$previewStore.currentGifFrameCount === 0}
         onclick={togglePlayback}
       >
-        {#if $files.isPreviewPlaying}
+        {#if $previewStore.isPreviewPlaying}
           <Pause aria-hidden="true" class="h-4 w-4" strokeWidth={2.25} />
         {:else}
           <Play aria-hidden="true" class="h-4 w-4" strokeWidth={2.25} />
@@ -52,7 +50,7 @@
         type="button"
         aria-label="Previous frame"
         class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950/90 dark:text-zinc-200 dark:hover:bg-zinc-900 dark:disabled:border-zinc-800 dark:disabled:bg-zinc-950/80 dark:disabled:text-zinc-600"
-        disabled={$files.currentGifFrameCount === 0}
+        disabled={$previewStore.currentGifFrameCount === 0}
         onclick={() => stepFrame(-1)}
       >
         <SkipBack aria-hidden="true" class="h-4 w-4" strokeWidth={2.25} />
@@ -61,7 +59,7 @@
         type="button"
         aria-label="Next frame"
         class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950/90 dark:text-zinc-200 dark:hover:bg-zinc-900 dark:disabled:border-zinc-800 dark:disabled:bg-zinc-950/80 dark:disabled:text-zinc-600"
-        disabled={$files.currentGifFrameCount === 0}
+        disabled={$previewStore.currentGifFrameCount === 0}
         onclick={() => stepFrame(1)}
       >
         <SkipForward aria-hidden="true" class="h-4 w-4" strokeWidth={2.25} />

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { EditorNode } from '@editor/state/node-slice.ts'
+  import { previewStore } from '@editor/state/preview.ts'
   import { selectState } from '@editor/state/svelte.ts'
 
   import OverlayRow from './OverlayRow.svelte'
@@ -12,7 +13,6 @@
   }
 
   const nodes = selectState((state) => state.nodes)
-  const files = selectState((state) => state.files)
 
   const overlayItems = $derived.by<OverlayItem[]>(() => {
     let textCount = 0
@@ -27,8 +27,8 @@
 
       return [
         {
-          currentPreviewFrameIndex: $files.currentPreviewFrameIndex,
-          frameCount: $files.currentGifFrameCount,
+          currentPreviewFrameIndex: $previewStore.currentPreviewFrameIndex,
+          frameCount: $previewStore.currentGifFrameCount,
           node,
           title: node.type === 'text' ? `Text ${++textCount}` : `Picture ${++pictureCount}`,
         },

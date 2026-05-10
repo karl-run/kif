@@ -6,7 +6,14 @@ import type { GifFrame } from '@gif/types.ts'
 import { registerExportController } from './export-controller.ts'
 import { registerPreviewController } from './preview-controller.ts'
 import { getFile } from './state/file-registry.ts'
-import { fileSlice } from './state/file-slice.ts'
+import {
+  getPreviewState,
+  previewStore,
+  resetPreviewState,
+  setPreviewFrameCount,
+  setPreviewFrameIndex,
+  setPreviewPlaying,
+} from './state/preview.ts'
 import { store } from './state/redux.ts'
 
 import {
@@ -52,11 +59,7 @@ void bootstrapNodeSync()
 
 let previousFileId = store.getState().files.currentFile?.id ?? null
 let shouldResumePreviewAfterExportDialog = false
-let previousPlaybackState = {
-  currentPreviewFrameIndex: store.getState().files.currentPreviewFrameIndex,
-  currentGifFrameCount: store.getState().files.currentGifFrameCount,
-  isPreviewPlaying: store.getState().files.isPreviewPlaying,
-}
+let previousPlaybackState = getPreviewState()
 const previewScaleObserver =
   typeof ResizeObserver === 'undefined'
     ? null
@@ -82,24 +85,31 @@ registerPreviewController({
 void syncPreviewToState()
 
 store.subscribe(() => {
-  const state = store.getState()
-  const currentFileId = state.files.currentFile?.id ?? null
+  const currentFileId = store.getState().files.currentFile?.id ?? null
 
   if (currentFileId !== previousFileId) {
     previousFileId = currentFileId
+
+    if (currentFileId === null) {
+      stopPlayback()
+      previewState.currentFileId = null
+      previewState.frames = []
+      resetPreviewState()
+      syncFrameCounter()
+      return
+    }
+
     void syncPreviewToState()
   }
+})
 
+previewStore.subscribe((state) => {
   if (
-    state.files.currentPreviewFrameIndex !== previousPlaybackState.currentPreviewFrameIndex ||
-    state.files.currentGifFrameCount !== previousPlaybackState.currentGifFrameCount ||
-    state.files.isPreviewPlaying !== previousPlaybackState.isPreviewPlaying
+    state.currentPreviewFrameIndex !== previousPlaybackState.currentPreviewFrameIndex ||
+    state.currentGifFrameCount !== previousPlaybackState.currentGifFrameCount ||
+    state.isPreviewPlaying !== previousPlaybackState.isPreviewPlaying
   ) {
-    previousPlaybackState = {
-      currentPreviewFrameIndex: state.files.currentPreviewFrameIndex,
-      currentGifFrameCount: state.files.currentGifFrameCount,
-      isPreviewPlaying: state.files.isPreviewPlaying,
-    }
+    previousPlaybackState = state
     syncPlaybackFromState()
   }
 })
@@ -129,9 +139,9 @@ async function syncPreviewToState(options?: { force?: boolean }): Promise<void> 
   stopPlayback()
   previewState.currentFileId = currentFileRef.id
   previewState.frames = decodedGif.frames
-  store.dispatch(fileSlice.actions.gifFrameCount(decodedGif.frames.length))
-  store.dispatch(fileSlice.actions.previewFrameIndex(0))
-  store.dispatch(fileSlice.actions.previewPlaying(true))
+  setPreviewFrameCount(decodedGif.frames.length)
+  setPreviewFrameIndex(0)
+  setPreviewPlaying(true)
 
   canvasEl.width = decodedGif.width
   canvasEl.height = decodedGif.height
@@ -159,11 +169,11 @@ function renderFrame(frameIndex: number): void {
 }
 
 function scheduleNextFrame(): void {
-  if (!store.getState().files.isPreviewPlaying || previewState.playbackTimer !== null) {
+  if (!getPreviewState().isPreviewPlaying || previewState.playbackTimer !== null) {
     return
   }
 
-  const currentFrameIndex = store.getState().files.currentPreviewFrameIndex
+  const currentFrameIndex = getPreviewState().currentPreviewFrameIndex
   const currentFrame = previewState.frames[currentFrameIndex]
 
   if (!currentFrame) {
@@ -177,12 +187,12 @@ function scheduleNextFrame(): void {
     () => {
       previewState.playbackTimer = null
 
-      if (!store.getState().files.isPreviewPlaying || previewState.frames.length === 0) {
+      if (!getPreviewState().isPreviewPlaying || previewState.frames.length === 0) {
         return
       }
 
-      const nextFrameIndex = getWrappedFrameIndex(store.getState().files.currentPreviewFrameIndex, 1)
-      store.dispatch(fileSlice.actions.previewFrameIndex(nextFrameIndex))
+      const nextFrameIndex = getWrappedFrameIndex(getPreviewState().currentPreviewFrameIndex, 1)
+      setPreviewFrameIndex(nextFrameIndex)
     },
     getFramePlaybackDelay(currentFrame, renderElapsedMs),
   )
@@ -210,11 +220,11 @@ function exportCurrentGif(): Blob | null {
     return null
   }
 
-  const wasPreviewPlaying = store.getState().files.isPreviewPlaying
+  const wasPreviewPlaying = getPreviewState().isPreviewPlaying
   shouldResumePreviewAfterExportDialog = wasPreviewPlaying
 
   if (wasPreviewPlaying) {
-    store.dispatch(fileSlice.actions.previewPlaying(false))
+    setPreviewPlaying(false)
   }
 
   const exportedGif = exportGif(previewState.frames, canvasEl.width, canvasEl.height, (frameIndex) =>
@@ -222,12 +232,12 @@ function exportCurrentGif(): Blob | null {
       ? nodeSync.toCanvasElementForFrame(frameIndex, previewState.frames.length)
       : fabricCanvas.toCanvasElement(),
   )
-  nodeSync?.renderFrame(store.getState().files.currentPreviewFrameIndex, previewState.frames.length)
+  nodeSync?.renderFrame(getPreviewState().currentPreviewFrameIndex, previewState.frames.length)
   return exportedGif
 }
 
 function syncPlaybackFromState(): void {
-  const { currentGifFrameCount, currentPreviewFrameIndex, isPreviewPlaying } = store.getState().files
+  const { currentGifFrameCount, currentPreviewFrameIndex, isPreviewPlaying } = getPreviewState()
 
   syncFrameCounter()
 
@@ -253,7 +263,7 @@ function handleExportDialogClosed(): void {
   }
 
   shouldResumePreviewAfterExportDialog = false
-  store.dispatch(fileSlice.actions.previewPlaying(true))
+  setPreviewPlaying(true)
 }
 
 function syncFrameCounter(): void {
@@ -261,7 +271,7 @@ function syncFrameCounter(): void {
     return
   }
 
-  const { currentGifFrameCount, currentPreviewFrameIndex } = store.getState().files
+  const { currentGifFrameCount, currentPreviewFrameIndex } = getPreviewState()
 
   gifFrameCounterEl.textContent =
     currentGifFrameCount > 0 ? `Frame ${currentPreviewFrameIndex + 1}/${currentGifFrameCount}` : ''
