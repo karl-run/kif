@@ -7,7 +7,3 @@ export const gifWidthEl = document.getElementById('gif-width') as HTMLDivElement
 export const previewStageEl = document.getElementById('preview-stage') as HTMLDivElement
 export const previewTimelineThumbnailsEl = document.getElementById('preview-timeline-thumbnails') as HTMLDivElement
 export const previewViewportInnerEl = document.getElementById('preview-viewport-inner') as HTMLDivElement
-export const exportGifButtonEl = document.getElementById('export-gif-button') as HTMLButtonElement
-export const exportedGifDialogEl = document.getElementById('exported-gif-dialog') as HTMLDialogElement
-export const exportedGifDownloadEl = document.getElementById('exported-gif-download') as HTMLAnchorElement
-export const exportedGifImageEl = document.getElementById('exported-gif-image') as HTMLImageElement

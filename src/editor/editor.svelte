@@ -1,5 +1,6 @@
 <script>
   import FilePicker from '@editor/ui/FilePicker.svelte'
+  import ExportPanel from '@editor/ui/export/ExportPanel.svelte'
   import GlobalDropZone from '@editor/ui/global-drop-zone/GlobalDropZone.svelte'
   import OverlaysPanel from '@editor/ui/overlays/OverlaysPanel.svelte'
   import PreviewTimeline from '@editor/ui/preview/PreviewTimeline.svelte'
@@ -11,3 +12,4 @@
 <PreviewViewport />
 <PreviewTimeline />
 <OverlaysPanel />
+<ExportPanel />

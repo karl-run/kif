@@ -3,6 +3,7 @@ import { decodeGif } from '@gif/decode.ts'
 import { getFramePlaybackDelay } from '@gif/timing.ts'
 import type { GifFrame } from '@gif/types.ts'
 
+import { registerExportController } from './export-controller.ts'
 import { getFile } from './state/file-registry.ts'
 import { fileSlice } from './state/file-slice.ts'
 import { store } from './state/redux.ts'
@@ -10,10 +11,6 @@ import { store } from './state/redux.ts'
 import {
   canvasEl,
   canvasStackShellEl,
-  exportGifButtonEl,
-  exportedGifDialogEl,
-  exportedGifDownloadEl,
-  exportedGifImageEl,
   fabricCanvasEl,
   gifFrameCounterEl,
   gifHeightEl,
@@ -39,13 +36,11 @@ if (canvasContext == null) {
 const previewState: {
   currentFileId: string | null
   frames: GifFrame[]
-  exportedGifUrl: string | null
   lastRenderStartedAt: number | null
   syncRequestId: number
   playbackTimer: number | null
 } = {
   currentFileId: null,
-  exportedGifUrl: null,
   frames: [],
   lastRenderStartedAt: null,
   syncRequestId: 0,
@@ -74,23 +69,12 @@ previewScaleObserver?.observe(canvasStackShellEl)
 syncPreviewScale()
 touchSelectionQuery?.addEventListener?.('change', syncTouchSelectionMode)
 
+registerExportController({
+  exportGif: exportCurrentGif,
+  onDialogClosed: handleExportDialogClosed,
+})
+
 void syncPreviewToState()
-
-if (exportGifButtonEl && exportedGifDialogEl && exportedGifImageEl && exportedGifDownloadEl) {
-  exportGifButtonEl.disabled = true
-  exportGifButtonEl.addEventListener('click', () => {
-    exportGifToDialog()
-  })
-  exportedGifDialogEl.addEventListener('close', () => {
-    if (!shouldResumePreviewAfterExportDialog || previewState.frames.length === 0) {
-      shouldResumePreviewAfterExportDialog = false
-      return
-    }
-
-    shouldResumePreviewAfterExportDialog = false
-    store.dispatch(fileSlice.actions.previewPlaying(true))
-  })
-}
 
 store.subscribe(() => {
   const state = store.getState()
@@ -151,7 +135,6 @@ async function syncPreviewToState(): Promise<void> {
   gifHeightEl.textContent = `${decodedGif.height}px`
   renderTimelineThumbnails()
   syncPreviewScale()
-  syncExportAvailability()
   syncFrameCounter()
 
   renderFrame(0)
@@ -217,15 +200,9 @@ async function bootstrapNodeSync(): Promise<void> {
   })
 }
 
-function exportGifToDialog(): void {
-  if (
-    previewState.frames.length === 0 ||
-    !exportedGifDialogEl ||
-    !exportedGifDownloadEl ||
-    !exportedGifImageEl ||
-    !exportGifButtonEl
-  ) {
-    return
+function exportCurrentGif(): Blob | null {
+  if (previewState.frames.length === 0) {
+    return null
   }
 
   const wasPreviewPlaying = store.getState().files.isPreviewPlaying
@@ -235,32 +212,13 @@ function exportGifToDialog(): void {
     store.dispatch(fileSlice.actions.previewPlaying(false))
   }
 
-  exportGifButtonEl.disabled = true
   const exportedGif = exportGif(previewState.frames, canvasEl.width, canvasEl.height, (frameIndex) =>
     nodeSync
       ? nodeSync.toCanvasElementForFrame(frameIndex, previewState.frames.length)
       : fabricCanvas.toCanvasElement(),
   )
-  const exportedGifUrl = URL.createObjectURL(exportedGif)
-
-  if (previewState.exportedGifUrl) {
-    URL.revokeObjectURL(previewState.exportedGifUrl)
-  }
-
-  previewState.exportedGifUrl = exportedGifUrl
-  exportedGifImageEl.src = exportedGifUrl
-  exportedGifDownloadEl.href = exportedGifUrl
-  exportedGifDialogEl.showModal()
   nodeSync?.renderFrame(store.getState().files.currentPreviewFrameIndex, previewState.frames.length)
-  syncExportAvailability()
-}
-
-function syncExportAvailability(): void {
-  if (!exportGifButtonEl) {
-    return
-  }
-
-  exportGifButtonEl.disabled = previewState.frames.length === 0
+  return exportedGif
 }
 
 function syncPlaybackFromState(): void {
@@ -281,6 +239,16 @@ function syncPlaybackFromState(): void {
   }
 
   scheduleNextFrame()
+}
+
+function handleExportDialogClosed(): void {
+  if (!shouldResumePreviewAfterExportDialog || previewState.frames.length === 0) {
+    shouldResumePreviewAfterExportDialog = false
+    return
+  }
+
+  shouldResumePreviewAfterExportDialog = false
+  store.dispatch(fileSlice.actions.previewPlaying(true))
 }
 
 function syncFrameCounter(): void {
