@@ -1,4 +1,4 @@
-import { addPictureNodeButtonEl, addTextNodeButtonEl, overlayNodeControlsEl } from './nodes.ts'
+import { overlayNodeControlsEl } from './nodes.ts'
 import { selectCanvasNode } from './fabric-node-sync.ts'
 import {
   createPictureNode,
@@ -8,6 +8,7 @@ import {
   type PictureNode,
   type TextNode,
 } from './state/node-slice.ts'
+import { pickPictureFile, readFileAsDataUrl } from './picture-picker.ts'
 import { store } from './state/redux.ts'
 
 type RangeHandle = 'start' | 'end'
@@ -31,29 +32,6 @@ document.addEventListener('pointermove', (event) => {
 
 document.addEventListener('pointerup', stopRangeDrag)
 document.addEventListener('pointercancel', stopRangeDrag)
-
-if (addTextNodeButtonEl && overlayNodeControlsEl) {
-  addTextNodeButtonEl.addEventListener('click', () => {
-    const nodeCount = store.getState().nodes.allIds.length
-    const offset = nodeCount * 24
-
-    store.dispatch(
-      nodeSlice.actions.upsertTextNode(
-        createTextNode({
-          left: 120 + offset,
-          text: `Text ${nodeCount + 1}`,
-          top: 114 + offset,
-        }),
-      ),
-    )
-  })
-}
-
-if (addPictureNodeButtonEl && overlayNodeControlsEl) {
-  addPictureNodeButtonEl.addEventListener('click', () => {
-    void createPictureNodeFromPicker()
-  })
-}
 
 if (overlayNodeControlsEl) {
   store.subscribe(() => {
@@ -621,46 +599,6 @@ async function replacePictureNodeFromPicker(nodeId: string): Promise<void> {
       },
     }),
   )
-}
-
-function pickPictureFile(): Promise<File | null> {
-  return new Promise((resolve) => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'image/*'
-    input.addEventListener(
-      'change',
-      () => {
-        resolve(input.files?.[0] ?? null)
-      },
-      { once: true },
-    )
-    input.click()
-  })
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.addEventListener(
-      'load',
-      () => {
-        const result = reader.result
-
-        if (typeof result !== 'string') {
-          reject(new Error('Expected a data URL when reading picture node input.'))
-          return
-        }
-
-        resolve(result)
-      },
-      { once: true },
-    )
-    reader.addEventListener('error', () => reject(reader.error ?? new Error('Failed to read picture node input.')), {
-      once: true,
-    })
-    reader.readAsDataURL(file)
-  })
 }
 
 function clampPercent(value: number): number {
