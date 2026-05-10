@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
 
   import { requestPreviewSync } from '@editor/preview-controller.ts'
-  import { rememberFile } from '@editor/state/file-registry.ts'
+  import { getFileSignature } from '@editor/state/file.ts'
   import { fileSlice } from '@editor/state/file-slice.ts'
   import { store } from '@editor/state/redux.ts'
 
@@ -14,24 +14,23 @@
   let isDragging = $state(false)
 
   const setCurrentFile = (file: File | null | undefined) => {
-    store.dispatch(fileSlice.actions.file(file ? rememberFile(file) : null))
+    store.dispatch(fileSlice.actions.file(file ?? null))
   }
 
   const syncPickedFile = async (options?: { preserveWhenEmpty?: boolean }) => {
     const file = inputEl?.files?.[0] ?? null
+    const currentFile = store.getState().files.currentFile
 
     if (!file && options?.preserveWhenEmpty) {
       return
     }
 
-    const fileRef = file ? rememberFile(file) : null
-
-    if (fileRef && store.getState().files.currentFile?.id === fileRef.id) {
+    if (file && currentFile && getFileSignature(currentFile) === getFileSignature(file)) {
       await requestPreviewSync()
       return
     }
 
-    store.dispatch(fileSlice.actions.file(fileRef))
+    store.dispatch(fileSlice.actions.file(file))
   }
 
   const handleDragEnter = (event: DragEvent) => {
@@ -65,12 +64,9 @@
 
     const restorePickedFile = () => {
       window.requestAnimationFrame(() => {
-        syncPickedFile({ preserveWhenEmpty: true })
+        void syncPickedFile({ preserveWhenEmpty: true })
 
-        const currentFileId = store.getState().files.currentFile?.id ?? null
-        const restoredInputFile = inputEl?.files?.[0] ?? null
-
-        if (currentFileId === null || restoredInputFile || remainingRestoreAttempts <= 0) {
+        if (inputEl?.files?.[0] || remainingRestoreAttempts <= 0) {
           return
         }
 

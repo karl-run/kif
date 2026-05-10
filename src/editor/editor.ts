@@ -5,7 +5,7 @@ import type { GifFrame } from '@gif/types.ts'
 
 import { registerExportController } from './export-controller.ts'
 import { registerPreviewController } from './preview-controller.ts'
-import { getFile } from './state/file-registry.ts'
+import { getFileSignature } from './state/file.ts'
 import {
   getPreviewState,
   previewStore,
@@ -42,13 +42,13 @@ if (canvasContext == null) {
 }
 
 const previewState: {
-  currentFileId: string | null
+  currentFileSignature: string | null
   frames: GifFrame[]
   lastRenderStartedAt: number | null
   syncRequestId: number
   playbackTimer: number | null
 } = {
-  currentFileId: null,
+  currentFileSignature: null,
   frames: [],
   lastRenderStartedAt: null,
   syncRequestId: 0,
@@ -57,7 +57,8 @@ const previewState: {
 
 void bootstrapNodeSync()
 
-let previousFileId = store.getState().files.currentFile?.id ?? null
+const initialCurrentFile = store.getState().files.currentFile
+let previousFileSignature = initialCurrentFile ? getFileSignature(initialCurrentFile) : null
 let shouldResumePreviewAfterExportDialog = false
 let previousPlaybackState = getPreviewState()
 const previewScaleObserver =
@@ -85,14 +86,15 @@ registerPreviewController({
 void syncPreviewToState()
 
 store.subscribe(() => {
-  const currentFileId = store.getState().files.currentFile?.id ?? null
+  const currentFile = store.getState().files.currentFile
+  const currentFileSignature = currentFile ? getFileSignature(currentFile) : null
 
-  if (currentFileId !== previousFileId) {
-    previousFileId = currentFileId
+  if (currentFileSignature !== previousFileSignature) {
+    previousFileSignature = currentFileSignature
 
-    if (currentFileId === null) {
+    if (currentFile === null) {
       stopPlayback()
-      previewState.currentFileId = null
+      previewState.currentFileSignature = null
       previewState.frames = []
       resetPreviewState()
       syncFrameCounter()
@@ -115,29 +117,31 @@ previewStore.subscribe((state) => {
 })
 
 async function syncPreviewToState(options?: { force?: boolean }): Promise<void> {
-  const currentFileRef = store.getState().files.currentFile
+  const currentFile = store.getState().files.currentFile
 
-  if (!currentFileRef || (!options?.force && currentFileRef.id === previewState.currentFileId)) {
+  if (!currentFile) {
+    return
+  }
+
+  const currentFileSignature = getFileSignature(currentFile)
+
+  if (!options?.force && currentFileSignature === previewState.currentFileSignature) {
     return
   }
 
   const syncRequestId = previewState.syncRequestId + 1
   previewState.syncRequestId = syncRequestId
+  const decodedGif = await decodeGif(currentFile)
 
-  const file = getFile(currentFileRef.id)
-
-  if (!file) {
-    return
-  }
-
-  const decodedGif = await decodeGif(file)
-
-  if (previewState.syncRequestId !== syncRequestId || store.getState().files.currentFile?.id !== currentFileRef.id) {
+  if (
+    previewState.syncRequestId !== syncRequestId ||
+    getFileSignature(store.getState().files.currentFile ?? currentFile) !== currentFileSignature
+  ) {
     return
   }
 
   stopPlayback()
-  previewState.currentFileId = currentFileRef.id
+  previewState.currentFileSignature = currentFileSignature
   previewState.frames = decodedGif.frames
   setPreviewFrameCount(decodedGif.frames.length)
   setPreviewFrameIndex(0)

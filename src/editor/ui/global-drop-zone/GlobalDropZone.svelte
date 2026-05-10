@@ -2,14 +2,13 @@
   import { onMount } from 'svelte'
 
   import { registerGlobalFileDrop } from './drop.ts'
-  import { rememberFile } from '@editor/state/file-registry.ts'
   import { fileSlice } from '@editor/state/file-slice.ts'
   import { store } from '@editor/state/redux.ts'
 
   let isDragging = $state(false)
 
   const setCurrentFile = (file: File) => {
-    store.dispatch(fileSlice.actions.file(rememberFile(file)))
+    store.dispatch(fileSlice.actions.file(file))
   }
 
   onMount(() => {

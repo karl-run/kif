@@ -9,7 +9,6 @@ const PERSISTED_STATE_VERSION = 1
 
 type PersistedState = {
   version: number
-  files: Pick<CounterState, 'currentFile'>
   nodes: NodeState
 }
 
@@ -42,7 +41,6 @@ function loadPersistedState():
     return {
       files: {
         ...initialFilesState,
-        currentFile: parsedState.files?.currentFile ?? initialFilesState.currentFile,
       },
       nodes: parsedState.nodes ?? initialNodesState,
     }
@@ -58,6 +56,13 @@ export const store = configureStore({
     files: fileSlice.reducer,
     nodes: nodeSlice.reducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: [fileSlice.actions.file.type],
+        ignoredPaths: ['files.currentFile'],
+      },
+    }),
 })
 
 let previousSerializedState = ''
@@ -70,9 +75,6 @@ store.subscribe(() => {
   const state = store.getState()
   const serializedState = JSON.stringify({
     version: PERSISTED_STATE_VERSION,
-    files: {
-      currentFile: state.files.currentFile,
-    },
     nodes: state.nodes,
   } satisfies PersistedState)
 

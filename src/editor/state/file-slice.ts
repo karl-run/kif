@@ -1,9 +1,9 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 
-import type { FileRef } from './file-registry.ts'
+import { getFileSignature } from './file.ts'
 
 export interface CounterState {
-  currentFile: FileRef | null
+  currentFile: File | null
 }
 
 const initialState: CounterState = {
@@ -14,14 +14,14 @@ export const fileSlice = createSlice({
   name: 'counter',
   initialState,
   reducers: {
-    file: (state, action: PayloadAction<FileRef | null>) => {
+    file: (state, action: PayloadAction<File | null>) => {
       const nextFile = action.payload
       if (!nextFile) {
         state.currentFile = null
         return
       }
 
-      if (state.currentFile?.id === nextFile.id) return
+      if (state.currentFile && getFileSignature(state.currentFile) === getFileSignature(nextFile)) return
 
       state.currentFile = nextFile
     },
