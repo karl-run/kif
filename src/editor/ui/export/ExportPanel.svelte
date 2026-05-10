@@ -2,8 +2,9 @@
   import { onDestroy } from 'svelte'
 
   import { requestGifExport, notifyExportDialogClosed } from '@editor/export-controller.ts'
-  import { previewStore } from '@editor/state/preview.ts'
+  import { selectState } from '@editor/state/svelte.ts'
 
+  const currentFile = selectState((state) => state.files.currentFile)
   let dialogEl = $state<HTMLDialogElement | null>(null)
   let exportedGifUrl = $state<string | null>(null)
   let isExporting = $state(false)
@@ -17,7 +18,7 @@
   }
 
   const requestExport = async () => {
-    if ($previewStore.currentGifFrameCount === 0 || isExporting) {
+    if (($currentFile?.frameCount ?? 0) === 0 || isExporting) {
       return
     }
 
@@ -51,7 +52,7 @@
 <button
   type="button"
   class="w-full rounded-2xl bg-green-600 px-6 py-4 text-lg font-semibold text-white shadow-sm transition hover:bg-green-500 disabled:cursor-not-allowed disabled:bg-zinc-300 dark:bg-green-700 dark:hover:bg-green-600 dark:disabled:bg-zinc-700"
-  disabled={$previewStore.currentGifFrameCount === 0 || isExporting}
+  disabled={($currentFile?.frameCount ?? 0) === 0 || isExporting}
   onclick={requestExport}
 >
   {isExporting ? 'Exporting…' : 'Export'}

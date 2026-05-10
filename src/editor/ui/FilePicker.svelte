@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
 
   import { requestPreviewSync } from '@editor/preview-controller.ts'
-  import { getFileSignature } from '@editor/state/file.ts'
+  import { createStoredFile, getFileSignature, rememberCurrentBrowserFile } from '@editor/state/file.ts'
   import { fileSlice } from '@editor/state/file-slice.ts'
   import { store } from '@editor/state/redux.ts'
 
@@ -13,24 +13,30 @@
   let inputEl: HTMLInputElement
   let isDragging = $state(false)
 
-  const setCurrentFile = (file: File | null | undefined) => {
-    store.dispatch(fileSlice.actions.file(file ?? null))
-  }
-
-  const syncPickedFile = async (options?: { preserveWhenEmpty?: boolean }) => {
-    const file = inputEl?.files?.[0] ?? null
-    const currentFile = store.getState().files.currentFile
-
-    if (!file && options?.preserveWhenEmpty) {
+  const setCurrentFile = async (file: File | null | undefined) => {
+    if (!file) {
+      rememberCurrentBrowserFile(null)
+      store.dispatch(fileSlice.actions.file(null))
       return
     }
 
-    if (file && currentFile && getFileSignature(currentFile) === getFileSignature(file)) {
+    rememberCurrentBrowserFile(file)
+
+    if (store.getState().files.currentFile?.id === getFileSignature(file)) {
       await requestPreviewSync()
       return
     }
 
-    store.dispatch(fileSlice.actions.file(file))
+    store.dispatch(fileSlice.actions.file(createStoredFile(file)))
+  }
+
+  const syncPickedFile = async (options?: { preserveWhenEmpty?: boolean }) => {
+    const file = inputEl?.files?.[0] ?? null
+    if (!file && options?.preserveWhenEmpty) {
+      return
+    }
+
+    await setCurrentFile(file)
   }
 
   const handleDragEnter = (event: DragEvent) => {
@@ -52,7 +58,7 @@
   const handleDrop = (event: DragEvent) => {
     event.preventDefault()
     isDragging = false
-    setCurrentFile(event.dataTransfer?.files?.[0] ?? null)
+    void setCurrentFile(event.dataTransfer?.files?.[0] ?? null)
   }
 
   const handleDragOver = (event: DragEvent) => {

@@ -5,12 +5,12 @@ import type { GifFrame } from '@gif/types.ts'
 
 import { registerExportController } from './export-controller.ts'
 import { registerPreviewController } from './preview-controller.ts'
-import { getFileSignature } from './state/file.ts'
+import { getCurrentBrowserFile } from './state/file.ts'
+import { fileSlice } from './state/file-slice.ts'
 import {
   getPreviewState,
   previewStore,
   resetPreviewState,
-  setPreviewFrameCount,
   setPreviewFrameIndex,
   setPreviewPlaying,
 } from './state/preview.ts'
@@ -20,9 +20,6 @@ import {
   canvasEl,
   canvasStackShellEl,
   fabricCanvasEl,
-  gifFrameCounterEl,
-  gifHeightEl,
-  gifWidthEl,
   previewStageEl,
   previewTimelineThumbnailsEl,
   previewViewportInnerEl,
@@ -58,7 +55,7 @@ const previewState: {
 void bootstrapNodeSync()
 
 const initialCurrentFile = store.getState().files.currentFile
-let previousFileSignature = initialCurrentFile ? getFileSignature(initialCurrentFile) : null
+let previousFileSignature = initialCurrentFile?.id ?? null
 let shouldResumePreviewAfterExportDialog = false
 let previousPlaybackState = getPreviewState()
 const previewScaleObserver =
@@ -87,7 +84,7 @@ void syncPreviewToState()
 
 store.subscribe(() => {
   const currentFile = store.getState().files.currentFile
-  const currentFileSignature = currentFile ? getFileSignature(currentFile) : null
+  const currentFileSignature = currentFile?.id ?? null
 
   if (currentFileSignature !== previousFileSignature) {
     previousFileSignature = currentFileSignature
@@ -97,7 +94,6 @@ store.subscribe(() => {
       previewState.currentFileSignature = null
       previewState.frames = []
       resetPreviewState()
-      syncFrameCounter()
       return
     }
 
@@ -108,7 +104,6 @@ store.subscribe(() => {
 previewStore.subscribe((state) => {
   if (
     state.currentPreviewFrameIndex !== previousPlaybackState.currentPreviewFrameIndex ||
-    state.currentGifFrameCount !== previousPlaybackState.currentGifFrameCount ||
     state.isPreviewPlaying !== previousPlaybackState.isPreviewPlaying
   ) {
     previousPlaybackState = state
@@ -118,12 +113,13 @@ previewStore.subscribe((state) => {
 
 async function syncPreviewToState(options?: { force?: boolean }): Promise<void> {
   const currentFile = store.getState().files.currentFile
+  const browserFile = getCurrentBrowserFile()
 
-  if (!currentFile) {
+  if (!currentFile || !browserFile) {
     return
   }
 
-  const currentFileSignature = getFileSignature(currentFile)
+  const currentFileSignature = currentFile.id
 
   if (!options?.force && currentFileSignature === previewState.currentFileSignature) {
     return
@@ -131,30 +127,31 @@ async function syncPreviewToState(options?: { force?: boolean }): Promise<void> 
 
   const syncRequestId = previewState.syncRequestId + 1
   previewState.syncRequestId = syncRequestId
-  const decodedGif = await decodeGif(currentFile)
+  const decodedGif = await decodeGif(browserFile)
 
-  if (
-    previewState.syncRequestId !== syncRequestId ||
-    getFileSignature(store.getState().files.currentFile ?? currentFile) !== currentFileSignature
-  ) {
+  if (previewState.syncRequestId !== syncRequestId || store.getState().files.currentFile?.id !== currentFileSignature) {
     return
   }
 
   stopPlayback()
   previewState.currentFileSignature = currentFileSignature
   previewState.frames = decodedGif.frames
-  setPreviewFrameCount(decodedGif.frames.length)
-  setPreviewFrameIndex(0)
-  setPreviewPlaying(true)
+  store.dispatch(
+    fileSlice.actions.fileDetails({
+      id: currentFileSignature,
+      frameCount: decodedGif.frames.length,
+      height: decodedGif.height,
+      width: decodedGif.width,
+    }),
+  )
+  setPreviewFrameIndex(0, decodedGif.frames.length)
+  setPreviewPlaying(true, decodedGif.frames.length)
 
   canvasEl.width = decodedGif.width
   canvasEl.height = decodedGif.height
   fabricCanvas.setDimensions({ width: decodedGif.width, height: decodedGif.height })
-  gifWidthEl.textContent = `${decodedGif.width}px`
-  gifHeightEl.textContent = `${decodedGif.height}px`
   renderTimelineThumbnails()
   syncPreviewScale()
-  syncFrameCounter()
 
   renderFrame(0)
   syncPlaybackFromState()
@@ -196,7 +193,7 @@ function scheduleNextFrame(): void {
       }
 
       const nextFrameIndex = getWrappedFrameIndex(getPreviewState().currentPreviewFrameIndex, 1)
-      setPreviewFrameIndex(nextFrameIndex)
+      setPreviewFrameIndex(nextFrameIndex, store.getState().files.currentFile?.frameCount ?? previewState.frames.length)
     },
     getFramePlaybackDelay(currentFrame, renderElapsedMs),
   )
@@ -228,7 +225,7 @@ function exportCurrentGif(): Blob | null {
   shouldResumePreviewAfterExportDialog = wasPreviewPlaying
 
   if (wasPreviewPlaying) {
-    setPreviewPlaying(false)
+    setPreviewPlaying(false, store.getState().files.currentFile?.frameCount ?? previewState.frames.length)
   }
 
   const exportedGif = exportGif(previewState.frames, canvasEl.width, canvasEl.height, (frameIndex) =>
@@ -241,9 +238,8 @@ function exportCurrentGif(): Blob | null {
 }
 
 function syncPlaybackFromState(): void {
-  const { currentGifFrameCount, currentPreviewFrameIndex, isPreviewPlaying } = getPreviewState()
-
-  syncFrameCounter()
+  const { currentPreviewFrameIndex, isPreviewPlaying } = getPreviewState()
+  const currentGifFrameCount = store.getState().files.currentFile?.frameCount ?? 0
 
   if (currentGifFrameCount === 0 || previewState.frames.length === 0) {
     stopPlayback()
@@ -267,18 +263,7 @@ function handleExportDialogClosed(): void {
   }
 
   shouldResumePreviewAfterExportDialog = false
-  setPreviewPlaying(true)
-}
-
-function syncFrameCounter(): void {
-  if (!gifFrameCounterEl) {
-    return
-  }
-
-  const { currentGifFrameCount, currentPreviewFrameIndex } = getPreviewState()
-
-  gifFrameCounterEl.textContent =
-    currentGifFrameCount > 0 ? `Frame ${currentPreviewFrameIndex + 1}/${currentGifFrameCount}` : ''
+  setPreviewPlaying(true, store.getState().files.currentFile?.frameCount ?? previewState.frames.length)
 }
 
 function syncTouchSelectionMode(): void {

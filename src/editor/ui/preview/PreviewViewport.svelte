@@ -4,26 +4,31 @@
   import SkipBack from '@lucide/svelte/icons/skip-back'
   import SkipForward from '@lucide/svelte/icons/skip-forward'
 
+  import { selectState } from '@editor/state/svelte.ts'
   import { previewStore, setPreviewFrameIndex, setPreviewPlaying } from '@editor/state/preview.ts'
 
+  const currentFile = selectState((state) => state.files.currentFile)
+  const currentFrameCount = () => $currentFile?.frameCount ?? 0
+  const frameCounterLabel = () =>
+    currentFrameCount() > 0 ? `Frame ${$previewStore.currentPreviewFrameIndex + 1}/${currentFrameCount()}` : ''
+
   const stepFrame = (direction: -1 | 1) => {
-    if ($previewStore.currentGifFrameCount === 0) {
+    if (currentFrameCount() === 0) {
       return
     }
 
     const nextFrameIndex =
-      ($previewStore.currentPreviewFrameIndex + direction + $previewStore.currentGifFrameCount) %
-      $previewStore.currentGifFrameCount
+      ($previewStore.currentPreviewFrameIndex + direction + currentFrameCount()) % currentFrameCount()
 
-    setPreviewFrameIndex(nextFrameIndex)
+    setPreviewFrameIndex(nextFrameIndex, currentFrameCount())
   }
 
   const togglePlayback = () => {
-    if ($previewStore.currentGifFrameCount === 0) {
+    if (currentFrameCount() === 0) {
       return
     }
 
-    setPreviewPlaying(!$previewStore.isPreviewPlaying)
+    setPreviewPlaying(!$previewStore.isPreviewPlaying, currentFrameCount())
   }
 </script>
 
@@ -37,7 +42,7 @@
         type="button"
         aria-label={$previewStore.isPreviewPlaying ? 'Pause preview' : 'Play preview'}
         class="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-200 bg-white/95 text-sm leading-none text-sky-700 shadow-sm backdrop-blur-sm transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400 dark:border-sky-800 dark:bg-zinc-950/90 dark:text-sky-300 dark:hover:bg-zinc-900 dark:disabled:border-zinc-800 dark:disabled:bg-zinc-950/80 dark:disabled:text-zinc-600"
-        disabled={$previewStore.currentGifFrameCount === 0}
+        disabled={currentFrameCount() === 0}
         onclick={togglePlayback}
       >
         {#if $previewStore.isPreviewPlaying}
@@ -50,7 +55,7 @@
         type="button"
         aria-label="Previous frame"
         class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950/90 dark:text-zinc-200 dark:hover:bg-zinc-900 dark:disabled:border-zinc-800 dark:disabled:bg-zinc-950/80 dark:disabled:text-zinc-600"
-        disabled={$previewStore.currentGifFrameCount === 0}
+        disabled={currentFrameCount() === 0}
         onclick={() => stepFrame(-1)}
       >
         <SkipBack aria-hidden="true" class="h-4 w-4" strokeWidth={2.25} />
@@ -59,7 +64,7 @@
         type="button"
         aria-label="Next frame"
         class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950/90 dark:text-zinc-200 dark:hover:bg-zinc-900 dark:disabled:border-zinc-800 dark:disabled:bg-zinc-950/80 dark:disabled:text-zinc-600"
-        disabled={$previewStore.currentGifFrameCount === 0}
+        disabled={currentFrameCount() === 0}
         onclick={() => stepFrame(1)}
       >
         <SkipForward aria-hidden="true" class="h-4 w-4" strokeWidth={2.25} />
@@ -69,25 +74,26 @@
       <div id="canvas-stack-shell" class="inline-block origin-top-left pt-4 pr-6 pb-5">
         <div id="canvas-stack" class="relative shrink-0">
           <div
-            id="gif-width"
             class="pointer-events-none absolute inset-x-0 -top-4 flex justify-center text-xs font-medium text-zinc-500 dark:text-zinc-400"
           >
+            {$currentFile && $currentFile.width > 0 ? `${$currentFile.width}px` : ''}
           </div>
           <div
-            id="gif-height"
             class="pointer-events-none absolute left-full top-1/2 -translate-x-2 -translate-y-1/2 rotate-90 whitespace-nowrap text-xs font-medium text-zinc-500 dark:text-zinc-400"
           >
+            {$currentFile && $currentFile.height > 0 ? `${$currentFile.height}px` : ''}
           </div>
           <div
-            id="gif-frame-counter"
             class="pointer-events-none absolute inset-x-0 -bottom-5 flex justify-center text-xs font-medium text-zinc-500 dark:text-zinc-400"
           >
+            {frameCounterLabel()}
           </div>
           <canvas
             id="da-canvas"
             class="block border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-950"
             width="240"
-            height="240"></canvas>
+            height="240"
+          ></canvas>
           <canvas id="fabric-canvas" class="absolute inset-0" width="240" height="240"></canvas>
         </div>
       </div>

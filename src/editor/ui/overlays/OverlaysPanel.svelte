@@ -45,7 +45,9 @@
   }
 </script>
 
-<section class="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+<section
+  class="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+>
   <div class="flex items-center justify-between gap-4">
     <div>
       <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Overlays</h2>

@@ -56,13 +56,6 @@ export const store = configureStore({
     files: fileSlice.reducer,
     nodes: nodeSlice.reducer,
   },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: [fileSlice.actions.file.type],
-        ignoredPaths: ['files.currentFile'],
-      },
-    }),
 })
 
 let previousSerializedState = ''

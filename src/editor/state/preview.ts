@@ -1,13 +1,11 @@
 import { get, writable } from 'svelte/store'
 
 export type PreviewStoreState = {
-  currentGifFrameCount: number
   currentPreviewFrameIndex: number
   isPreviewPlaying: boolean
 }
 
 const initialState: PreviewStoreState = {
-  currentGifFrameCount: 0,
   currentPreviewFrameIndex: 0,
   isPreviewPlaying: false,
 }
@@ -24,27 +22,9 @@ export const resetPreviewState = (): void => {
   store.set(initialState)
 }
 
-export const setPreviewFrameCount = (frameCount: number): void => {
+export const setPreviewFrameIndex = (frameIndex: number, frameCount: number): void => {
   store.update((state) => {
     if (frameCount <= 0) {
-      return {
-        currentGifFrameCount: 0,
-        currentPreviewFrameIndex: 0,
-        isPreviewPlaying: false,
-      }
-    }
-
-    return {
-      ...state,
-      currentGifFrameCount: frameCount,
-      currentPreviewFrameIndex: Math.min(state.currentPreviewFrameIndex, frameCount - 1),
-    }
-  })
-}
-
-export const setPreviewFrameIndex = (frameIndex: number): void => {
-  store.update((state) => {
-    if (state.currentGifFrameCount <= 0) {
       return {
         ...state,
         currentPreviewFrameIndex: 0,
@@ -53,14 +33,14 @@ export const setPreviewFrameIndex = (frameIndex: number): void => {
 
     return {
       ...state,
-      currentPreviewFrameIndex: Math.min(Math.max(frameIndex, 0), state.currentGifFrameCount - 1),
+      currentPreviewFrameIndex: Math.min(Math.max(frameIndex, 0), frameCount - 1),
     }
   })
 }
 
-export const setPreviewPlaying = (isPlaying: boolean): void => {
+export const setPreviewPlaying = (isPlaying: boolean, frameCount: number): void => {
   store.update((state) => ({
     ...state,
-    isPreviewPlaying: isPlaying && state.currentGifFrameCount > 0,
+    isPreviewPlaying: isPlaying && frameCount > 0,
   }))
 }

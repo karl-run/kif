@@ -152,7 +152,9 @@
     />
   {:else if pictureNode}
     <div class="space-y-3">
-      <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-950">
+      <div
+        class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-950"
+      >
         <img
           class="h-16 w-16 rounded-md border border-zinc-200 bg-zinc-100 object-contain dark:border-zinc-700 dark:bg-zinc-900"
           class:invisible={!pictureNode.src}

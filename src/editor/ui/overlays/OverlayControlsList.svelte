@@ -13,6 +13,7 @@
   }
 
   const nodes = selectState((state) => state.nodes)
+  const currentFile = selectState((state) => state.files.currentFile)
 
   const overlayItems = $derived.by<OverlayItem[]>(() => {
     let textCount = 0
@@ -28,7 +29,7 @@
       return [
         {
           currentPreviewFrameIndex: $previewStore.currentPreviewFrameIndex,
-          frameCount: $previewStore.currentGifFrameCount,
+          frameCount: $currentFile?.frameCount ?? 0,
           node,
           title: node.type === 'text' ? `Text ${++textCount}` : `Picture ${++pictureCount}`,
         },

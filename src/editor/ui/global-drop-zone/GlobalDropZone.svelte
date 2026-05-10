@@ -2,13 +2,22 @@
   import { onMount } from 'svelte'
 
   import { registerGlobalFileDrop } from './drop.ts'
+  import { createStoredFile, getFileSignature, rememberCurrentBrowserFile } from '@editor/state/file.ts'
+  import { requestPreviewSync } from '@editor/preview-controller.ts'
   import { fileSlice } from '@editor/state/file-slice.ts'
   import { store } from '@editor/state/redux.ts'
 
   let isDragging = $state(false)
 
-  const setCurrentFile = (file: File) => {
-    store.dispatch(fileSlice.actions.file(file))
+  const setCurrentFile = async (file: File) => {
+    rememberCurrentBrowserFile(file)
+
+    if (store.getState().files.currentFile?.id === getFileSignature(file)) {
+      await requestPreviewSync()
+      return
+    }
+
+    store.dispatch(fileSlice.actions.file(createStoredFile(file)))
   }
 
   onMount(() => {
@@ -16,7 +25,9 @@
       onDragStateChange: (nextIsDragging) => {
         isDragging = nextIsDragging
       },
-      onFileDrop: setCurrentFile,
+      onFileDrop: (file) => {
+        void setCurrentFile(file)
+      },
     })
   })
 </script>
