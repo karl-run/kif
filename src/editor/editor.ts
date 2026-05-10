@@ -1,5 +1,6 @@
 import { exportGif } from '@gif/export.ts'
 import { decodeGif } from '@gif/decode.ts'
+import { getFramePlaybackDelay } from '@gif/timing.ts'
 import type { GifFrame } from '@gif/types.ts'
 
 import { getFile, rememberFile } from './state/file-registry.ts'
@@ -50,12 +51,14 @@ const previewState: {
   currentFileId: string | null
   frames: GifFrame[]
   exportedGifUrl: string | null
+  lastRenderStartedAt: number | null
   syncRequestId: number
   playbackTimer: number | null
 } = {
   currentFileId: null,
   exportedGifUrl: null,
   frames: [],
+  lastRenderStartedAt: null,
   syncRequestId: 0,
   playbackTimer: null,
 }
@@ -271,6 +274,7 @@ function renderFrame(frameIndex: number): void {
     return
   }
 
+  previewState.lastRenderStartedAt = performance.now()
   canvasContext.putImageData(frame.imageData, 0, 0)
   nodeSync?.renderFrame(frameIndex, previewState.frames.length)
 }
@@ -287,16 +291,22 @@ function scheduleNextFrame(): void {
     return
   }
 
-  previewState.playbackTimer = window.setTimeout(() => {
-    previewState.playbackTimer = null
+  const renderElapsedMs =
+    previewState.lastRenderStartedAt === null ? 0 : performance.now() - previewState.lastRenderStartedAt
 
-    if (!store.getState().files.isPreviewPlaying || previewState.frames.length === 0) {
-      return
-    }
+  previewState.playbackTimer = window.setTimeout(
+    () => {
+      previewState.playbackTimer = null
 
-    const nextFrameIndex = (store.getState().files.currentPreviewFrameIndex + 1) % previewState.frames.length
-    store.dispatch(fileSlice.actions.previewFrameIndex(nextFrameIndex))
-  }, normalizeDelay(currentFrame.delay))
+      if (!store.getState().files.isPreviewPlaying || previewState.frames.length === 0) {
+        return
+      }
+
+      const nextFrameIndex = getWrappedFrameIndex(store.getState().files.currentPreviewFrameIndex, 1)
+      store.dispatch(fileSlice.actions.previewFrameIndex(nextFrameIndex))
+    },
+    getFramePlaybackDelay(currentFrame, renderElapsedMs),
+  )
 }
 
 function stopPlayback(): void {
@@ -320,16 +330,8 @@ function stepFrame(direction: -1 | 1): void {
   }
 
   const currentFrameIndex = store.getState().files.currentPreviewFrameIndex
-  const nextFrameIndex = (currentFrameIndex + direction + previewState.frames.length) % previewState.frames.length
+  const nextFrameIndex = getWrappedFrameIndex(currentFrameIndex, direction)
   store.dispatch(fileSlice.actions.previewFrameIndex(nextFrameIndex))
-}
-
-function normalizeDelay(delay: number): number {
-  if (delay <= 0) {
-    return 100
-  }
-
-  return Math.max(delay, 20)
 }
 
 async function bootstrapNodeSync(): Promise<void> {
@@ -538,6 +540,10 @@ function finishTimelineScrub(): void {
 
   shouldResumePreviewAfterTimelineScrub = false
   store.dispatch(fileSlice.actions.previewPlaying(true))
+}
+
+function getWrappedFrameIndex(frameIndex: number, direction: -1 | 1): number {
+  return (frameIndex + direction + previewState.frames.length) % previewState.frames.length
 }
 
 function syncPreviewScale(): void {
