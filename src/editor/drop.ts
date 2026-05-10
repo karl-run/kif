@@ -2,10 +2,8 @@ import { rememberFile } from './state/file-registry.ts'
 import { fileSlice } from './state/file-slice.ts'
 import { store } from './state/redux.ts'
 
-import { filePickerShell } from './nodes.ts'
-
 const isInsideFilePicker = (target: EventTarget | null): boolean =>
-  target instanceof Node && Boolean(filePickerShell.contains(target))
+  target instanceof Element && target.closest('[data-file-picker-shell]') !== null
 
 const handleGlobalDragOver = (event: DragEvent) => {
   if (isInsideFilePicker(event.target)) {

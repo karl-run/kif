@@ -13,11 +13,13 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/svelte": "^8.1.0",
     "@lucide/astro": "^1.14.0",
     "@reduxjs/toolkit": "^2.11.2",
     "fabric": "^7.3.1",
     "gifenc": "^1.0.3",
-    "gifuct-js": "^2.1.2"
+    "gifuct-js": "^2.1.2",
+    "svelte": "^5.55.5"
   },
   "devDependencies": {
     "@karl-run/prettier-config": "^1.1.0",
@@ -25,7 +27,8 @@
     "astro": "^6.3.1",
     "prettier": "^3.8.3",
     "prettier-plugin-astro": "^0.14.1",
+    "prettier-plugin-svelte": "^3.5.1",
     "tailwindcss": "^4.3.0",
-    "typescript": "^6.0.3"
+    "typescript": "^5.9.3"
   }
 }

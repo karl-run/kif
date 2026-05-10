@@ -3,7 +3,7 @@ import { decodeGif } from '@gif/decode.ts'
 import { getFramePlaybackDelay } from '@gif/timing.ts'
 import type { GifFrame } from '@gif/types.ts'
 
-import { getFile, rememberFile } from './state/file-registry.ts'
+import { getFile } from './state/file-registry.ts'
 import { fileSlice } from './state/file-slice.ts'
 import { store } from './state/redux.ts'
 
@@ -15,8 +15,6 @@ import {
   exportedGifDownloadEl,
   exportedGifImageEl,
   fabricCanvasEl,
-  filePickerInput,
-  filePickerShell,
   playbackIconPauseEl,
   playbackIconPlayEl,
   previewTimelineHandleEl,
@@ -85,52 +83,6 @@ previewScaleObserver?.observe(previewViewportInnerEl)
 previewScaleObserver?.observe(canvasStackShellEl)
 syncPreviewScale()
 touchSelectionQuery?.addEventListener?.('change', syncTouchSelectionMode)
-
-if (filePickerShell && filePickerInput instanceof HTMLInputElement) {
-  let remainingRestoreAttempts = 8
-
-  const setDragging = (dragging: boolean) => {
-    filePickerInput.classList.toggle('border-sky-400', dragging)
-    filePickerInput.classList.toggle('bg-sky-50', dragging)
-  }
-
-  const syncPickedFile = () => {
-    const file = filePickerInput.files?.[0]
-    const fileRef = file ? rememberFile(file) : null
-
-    if (fileRef && store.getState().files.currentFile?.id === fileRef.id) {
-      void syncPreviewToState()
-      return
-    }
-
-    store.dispatch(fileSlice.actions.file(fileRef))
-  }
-
-  const restorePickedFile = () => {
-    window.requestAnimationFrame(() => {
-      syncPickedFile()
-
-      const currentFileId = store.getState().files.currentFile?.id ?? null
-      const restoredInputFile = filePickerInput.files?.[0] ?? null
-      const needsAnotherRestoreAttempt =
-        currentFileId !== null && previewState.currentFileId !== currentFileId && restoredInputFile === null
-
-      if (needsAnotherRestoreAttempt && remainingRestoreAttempts > 0) {
-        remainingRestoreAttempts -= 1
-        window.setTimeout(restorePickedFile, 150)
-      }
-    })
-  }
-
-  filePickerShell.addEventListener('dragenter', () => setDragging(true))
-  filePickerShell.addEventListener('dragleave', () => setDragging(false))
-  filePickerShell.addEventListener('drop', () => {
-    setDragging(false)
-  })
-  filePickerInput.addEventListener('change', syncPickedFile)
-  window.addEventListener('pageshow', restorePickedFile)
-  restorePickedFile()
-}
 
 void syncPreviewToState()
 

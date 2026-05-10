@@ -5,6 +5,8 @@ import PlayIcon from '@lucide/astro/icons/play'
 import SkipBackIcon from '@lucide/astro/icons/skip-back'
 import SkipForwardIcon from '@lucide/astro/icons/skip-forward'
 
+import Editor from '@editor/editor.svelte'
+
 const pageTitle = 'Kif - GIF meme editor'
 const pageDescription =
   'Create and edit GIF captions with draggable text, frame-based visibility, playback controls, and export support.'
@@ -35,21 +37,7 @@ const pageDescription =
     <main class="mx-auto flex w-full max-w-[800px] flex-col gap-6 px-4 py-6 sm:px-6">
       <h1 class="text-3xl font-semibold tracking-tight">Kif - Annotate gif memes</h1>
 
-      <div id="kif-file-picker-shell" class="relative block w-full">
-        <div class="pointer-events-none absolute inset-x-6 top-6 space-y-1">
-          <label for="kif-file-picker" class="block text-lg font-medium text-zinc-900 dark:text-zinc-100">
-            Click to choose a GIF
-          </label>
-          <p class="text-sm text-zinc-600 dark:text-zinc-400">Or drop one here.</p>
-        </div>
-
-        <input
-          id="kif-file-picker"
-          type="file"
-          accept="image/gif"
-          class="block w-full cursor-pointer rounded-3xl border border-dashed border-zinc-300 bg-zinc-50 px-6 pb-6 pt-24 text-sm text-zinc-700 transition hover:border-sky-400 hover:bg-sky-50 file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-sky-500 dark:hover:bg-zinc-900 dark:file:bg-zinc-100 dark:file:text-zinc-900 dark:hover:file:bg-white"
-        />
-      </div>
+      <Editor client:load />
 
       <div
         id="preview-viewport"
