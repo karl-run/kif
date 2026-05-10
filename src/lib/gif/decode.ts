@@ -15,10 +15,12 @@ export async function decodeGif(file: File): Promise<DecodedGif> {
   const workingCanvas = document.createElement('canvas')
   workingCanvas.width = width
   workingCanvas.height = height
+  const patchCanvas = document.createElement('canvas')
 
   const workingContext = workingCanvas.getContext('2d', { willReadFrequently: true })
+  const patchContext = patchCanvas.getContext('2d', { willReadFrequently: true })
 
-  if (!workingContext) {
+  if (!workingContext || !patchContext) {
     throw new Error('A 2D canvas context is required to decode GIFs.')
   }
 
@@ -26,6 +28,7 @@ export async function decodeGif(file: File): Promise<DecodedGif> {
   let previousDisposal = 0
   let previousPatchDims: ParsedFrame['dims'] | null = null
   let previousSnapshot: ImageData | null = null
+  let patchImageData: ImageData | null = null
 
   for (const frame of patchFrames) {
     if (previousDisposal === 2 && previousPatchDims) {
@@ -41,8 +44,20 @@ export async function decodeGif(file: File): Promise<DecodedGif> {
 
     const restoreTarget = frame.disposalType === 3 ? workingContext.getImageData(0, 0, width, height) : null
 
-    workingContext.putImageData(
-      new ImageData(new Uint8ClampedArray(frame.patch), frame.dims.width, frame.dims.height),
+    if (patchCanvas.width !== frame.dims.width || patchCanvas.height !== frame.dims.height) {
+      patchCanvas.width = frame.dims.width
+      patchCanvas.height = frame.dims.height
+      patchImageData = null
+    }
+
+    if (!patchImageData) {
+      patchImageData = patchContext.createImageData(frame.dims.width, frame.dims.height)
+    }
+
+    patchImageData.data.set(frame.patch)
+    patchContext.putImageData(patchImageData, 0, 0)
+    workingContext.drawImage(
+      patchCanvas,
       frame.dims.left,
       frame.dims.top,
     )
