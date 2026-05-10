@@ -1,9 +1,5 @@
 ---
 import '../styles/global.css'
-import PauseIcon from '@lucide/astro/icons/pause'
-import PlayIcon from '@lucide/astro/icons/play'
-import SkipBackIcon from '@lucide/astro/icons/skip-back'
-import SkipForwardIcon from '@lucide/astro/icons/skip-forward'
 
 import Editor from '@editor/editor.svelte'
 
@@ -38,109 +34,6 @@ const pageDescription =
       <h1 class="text-3xl font-semibold tracking-tight">Kif - Annotate gif memes</h1>
 
       <Editor client:load />
-
-      <div
-        id="preview-viewport"
-        class="w-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900"
-      >
-        <div id="preview-viewport-inner" class="relative flex min-h-80 w-full items-center justify-center p-4 sm:p-6">
-          <div class="absolute left-4 top-4 z-20 flex flex-wrap gap-1.5">
-            <button
-              id="toggle-playback-button"
-              type="button"
-              aria-label="Pause preview"
-              class="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-200 bg-white/95 text-sm leading-none text-sky-700 shadow-sm backdrop-blur-sm transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400 dark:border-sky-800 dark:bg-zinc-950/90 dark:text-sky-300 dark:hover:bg-zinc-900 dark:disabled:border-zinc-800 dark:disabled:bg-zinc-950/80 dark:disabled:text-zinc-600"
-            >
-              <span id="playback-icon-pause">
-                <PauseIcon class="h-4 w-4" stroke-width={2.25} />
-              </span>
-              <span id="playback-icon-play" class="hidden">
-                <PlayIcon class="h-4 w-4" stroke-width={2.25} />
-              </span>
-            </button>
-            <button
-              id="step-backward-button"
-              type="button"
-              aria-label="Previous frame"
-              class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950/90 dark:text-zinc-200 dark:hover:bg-zinc-900 dark:disabled:border-zinc-800 dark:disabled:bg-zinc-950/80 dark:disabled:text-zinc-600"
-            >
-              <span>
-                <SkipBackIcon class="h-4 w-4" stroke-width={2.25} />
-              </span>
-            </button>
-            <button
-              id="step-forward-button"
-              type="button"
-              aria-label="Next frame"
-              class="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-sm leading-none text-zinc-700 shadow-sm backdrop-blur-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-white/80 disabled:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950/90 dark:text-zinc-200 dark:hover:bg-zinc-900 dark:disabled:border-zinc-800 dark:disabled:bg-zinc-950/80 dark:disabled:text-zinc-600"
-            >
-              <span>
-                <SkipForwardIcon class="h-4 w-4" stroke-width={2.25} />
-              </span>
-            </button>
-          </div>
-          <div id="preview-stage" class="relative">
-            <div id="canvas-stack-shell" class="inline-block origin-top-left pt-4 pr-6 pb-5">
-              <div id="canvas-stack" class="relative shrink-0">
-                <div
-                  id="gif-width"
-                  class="pointer-events-none absolute inset-x-0 -top-4 flex justify-center text-xs font-medium text-zinc-500 dark:text-zinc-400"
-                >
-                </div>
-                <div
-                  id="gif-height"
-                  class="pointer-events-none absolute left-full top-1/2 -translate-x-2 -translate-y-1/2 rotate-90 whitespace-nowrap text-xs font-medium text-zinc-500 dark:text-zinc-400"
-                >
-                </div>
-                <div
-                  id="gif-frame-counter"
-                  class="pointer-events-none absolute inset-x-0 -bottom-5 flex justify-center text-xs font-medium text-zinc-500 dark:text-zinc-400"
-                >
-                </div>
-                <canvas
-                  id="da-canvas"
-                  class="block border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-950"
-                  width="240"
-                  height="240"></canvas>
-                <canvas id="fabric-canvas" class="absolute inset-0" width="240" height="240"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div
-        id="preview-timeline-shell"
-        class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-      >
-        <div
-          class="border-b border-zinc-200 px-4 py-2 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400"
-        >
-          Timeline
-        </div>
-        <div id="preview-timeline" class="relative h-18 bg-zinc-200 dark:bg-zinc-800">
-          <div id="preview-timeline-thumbnails" class="absolute inset-0 flex items-stretch gap-px"></div>
-          <div
-            id="preview-timeline-indicator"
-            class="pointer-events-none absolute inset-y-0 left-0 z-20 -ml-px w-0.5 bg-sky-500"
-          >
-          </div>
-          <div
-            id="preview-timeline-handle"
-            class="pointer-events-none absolute inset-y-1 left-0 z-20 -ml-[0.4375rem] w-[0.875rem] rounded-full bg-white/72 shadow-[inset_0_0_0_2px_rgb(14_165_233),0_1px_2px_rgb(0_0_0_/_0.16)] dark:bg-zinc-50/72"
-          >
-          </div>
-          <input
-            id="preview-timeline-slider"
-            type="range"
-            min="0"
-            max="0"
-            value="0"
-            step="1"
-            aria-label="Preview timeline"
-            class="kif-timeline-slider absolute inset-0 z-30 h-full w-full cursor-ew-resize bg-transparent disabled:cursor-not-allowed"
-          />
-        </div>
-      </div>
       <section
         class="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
       >

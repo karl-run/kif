@@ -15,21 +15,12 @@ import {
   exportedGifDownloadEl,
   exportedGifImageEl,
   fabricCanvasEl,
-  playbackIconPauseEl,
-  playbackIconPlayEl,
-  previewTimelineHandleEl,
   gifFrameCounterEl,
   gifHeightEl,
   gifWidthEl,
   previewStageEl,
-  previewTimelineIndicatorEl,
-  previewTimelineShellEl,
-  previewTimelineSliderEl,
   previewTimelineThumbnailsEl,
   previewViewportInnerEl,
-  stepBackwardButtonEl,
-  stepForwardButtonEl,
-  togglePlaybackButtonEl,
 } from './nodes.ts'
 import { OverlayCanvas } from './fabric-canvas.ts'
 import { waitForImpactFont } from './fonts.ts'
@@ -65,7 +56,6 @@ void bootstrapNodeSync()
 
 let previousFileId = store.getState().files.currentFile?.id ?? null
 let shouldResumePreviewAfterExportDialog = false
-let shouldResumePreviewAfterTimelineScrub = false
 let previousPlaybackState = {
   currentPreviewFrameIndex: store.getState().files.currentPreviewFrameIndex,
   currentGifFrameCount: store.getState().files.currentGifFrameCount,
@@ -101,55 +91,6 @@ if (exportGifButtonEl && exportedGifDialogEl && exportedGifImageEl && exportedGi
     store.dispatch(fileSlice.actions.previewPlaying(true))
   })
 }
-
-if (togglePlaybackButtonEl) {
-  togglePlaybackButtonEl.disabled = true
-  togglePlaybackButtonEl.addEventListener('click', () => {
-    togglePlayback()
-  })
-}
-
-if (stepBackwardButtonEl) {
-  stepBackwardButtonEl.disabled = true
-  stepBackwardButtonEl.addEventListener('click', () => {
-    stepFrame(-1)
-  })
-}
-
-if (stepForwardButtonEl) {
-  stepForwardButtonEl.disabled = true
-  stepForwardButtonEl.addEventListener('click', () => {
-    stepFrame(1)
-  })
-}
-
-if (previewTimelineSliderEl) {
-  previewTimelineSliderEl.disabled = true
-  previewTimelineSliderEl.addEventListener('pointerdown', () => {
-    if (previewState.frames.length === 0) {
-      return
-    }
-
-    shouldResumePreviewAfterTimelineScrub = store.getState().files.isPreviewPlaying
-
-    if (shouldResumePreviewAfterTimelineScrub) {
-      store.dispatch(fileSlice.actions.previewPlaying(false))
-    }
-  })
-  previewTimelineSliderEl.addEventListener('input', () => {
-    const frameIndex = Number.parseInt(previewTimelineSliderEl.value, 10)
-
-    if (Number.isNaN(frameIndex)) {
-      return
-    }
-
-    store.dispatch(fileSlice.actions.previewFrameIndex(frameIndex))
-  })
-  previewTimelineSliderEl.addEventListener('change', finishTimelineScrub)
-}
-
-document.addEventListener('pointerup', finishTimelineScrub)
-document.addEventListener('pointercancel', finishTimelineScrub)
 
 store.subscribe(() => {
   const state = store.getState()
@@ -211,8 +152,6 @@ async function syncPreviewToState(): Promise<void> {
   renderTimelineThumbnails()
   syncPreviewScale()
   syncExportAvailability()
-  syncPlaybackAvailability()
-  syncTimelineState()
   syncFrameCounter()
 
   renderFrame(0)
@@ -266,24 +205,6 @@ function stopPlayback(): void {
     window.clearTimeout(previewState.playbackTimer)
     previewState.playbackTimer = null
   }
-}
-
-function togglePlayback(): void {
-  if (previewState.frames.length === 0) {
-    return
-  }
-
-  store.dispatch(fileSlice.actions.previewPlaying(!store.getState().files.isPreviewPlaying))
-}
-
-function stepFrame(direction: -1 | 1): void {
-  if (previewState.frames.length === 0) {
-    return
-  }
-
-  const currentFrameIndex = store.getState().files.currentPreviewFrameIndex
-  const nextFrameIndex = getWrappedFrameIndex(currentFrameIndex, direction)
-  store.dispatch(fileSlice.actions.previewFrameIndex(nextFrameIndex))
 }
 
 async function bootstrapNodeSync(): Promise<void> {
@@ -342,33 +263,10 @@ function syncExportAvailability(): void {
   exportGifButtonEl.disabled = previewState.frames.length === 0
 }
 
-function syncPlaybackAvailability(): void {
-  const { currentGifFrameCount, isPreviewPlaying } = store.getState().files
-
-  if (!togglePlaybackButtonEl) {
-    return
-  }
-
-  togglePlaybackButtonEl.disabled = currentGifFrameCount === 0
-  togglePlaybackButtonEl.setAttribute('aria-label', isPreviewPlaying ? 'Pause preview' : 'Play preview')
-  playbackIconPauseEl?.classList.toggle('hidden', !isPreviewPlaying)
-  playbackIconPlayEl?.classList.toggle('hidden', isPreviewPlaying)
-
-  if (stepBackwardButtonEl) {
-    stepBackwardButtonEl.disabled = currentGifFrameCount === 0
-  }
-
-  if (stepForwardButtonEl) {
-    stepForwardButtonEl.disabled = currentGifFrameCount === 0
-  }
-}
-
 function syncPlaybackFromState(): void {
   const { currentGifFrameCount, currentPreviewFrameIndex, isPreviewPlaying } = store.getState().files
 
-  syncPlaybackAvailability()
   syncFrameCounter()
-  syncTimelineState()
 
   if (currentGifFrameCount === 0 || previewState.frames.length === 0) {
     stopPlayback()
@@ -405,25 +303,6 @@ function syncTouchSelectionMode(): void {
   fabricCanvas.upperCanvasEl.style.touchAction = touchAction
   fabricCanvas.lowerCanvasEl.style.touchAction = touchAction
   fabricCanvas.wrapperEl.style.touchAction = touchAction
-}
-
-function syncTimelineState(): void {
-  const { currentGifFrameCount, currentPreviewFrameIndex } = store.getState().files
-
-  if (!previewTimelineSliderEl || !previewTimelineIndicatorEl || !previewTimelineHandleEl || !previewTimelineShellEl) {
-    return
-  }
-
-  previewTimelineShellEl.classList.toggle('opacity-50', currentGifFrameCount === 0)
-  previewTimelineSliderEl.disabled = currentGifFrameCount === 0
-  previewTimelineSliderEl.max = String(Math.max(currentGifFrameCount - 1, 0))
-  previewTimelineSliderEl.value = String(Math.min(currentPreviewFrameIndex, Math.max(currentGifFrameCount - 1, 0)))
-
-  const progress = currentGifFrameCount > 1 ? currentPreviewFrameIndex / (currentGifFrameCount - 1) : 0
-  previewTimelineIndicatorEl.style.left = `${progress * 100}%`
-  previewTimelineHandleEl.style.left = `${progress * 100}%`
-  previewTimelineIndicatorEl.classList.toggle('hidden', currentGifFrameCount === 0)
-  previewTimelineHandleEl.classList.toggle('hidden', currentGifFrameCount === 0)
 }
 
 function renderTimelineThumbnails(): void {
@@ -482,16 +361,6 @@ function renderTimelineThumbnails(): void {
     )
     previewTimelineThumbnailsEl.append(thumbnailCanvas)
   }
-}
-
-function finishTimelineScrub(): void {
-  if (!shouldResumePreviewAfterTimelineScrub || previewState.frames.length === 0) {
-    shouldResumePreviewAfterTimelineScrub = false
-    return
-  }
-
-  shouldResumePreviewAfterTimelineScrub = false
-  store.dispatch(fileSlice.actions.previewPlaying(true))
 }
 
 function getWrappedFrameIndex(frameIndex: number, direction: -1 | 1): number {

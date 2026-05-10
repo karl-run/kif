@@ -728,6 +728,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@lucide/svelte@npm:^1.14.0":
+  version: 1.14.0
+  resolution: "@lucide/svelte@npm:1.14.0"
+  peerDependencies:
+    svelte: ^5
+  checksum: 10c0/0b1899fee13eaa2060f5e56bfee50cb2da4e27ad8cf35136fff724ea05550241c25d6c2ad99fc79d97c0fbcc58373d60f4e5285fb3391420f79f6ee7569241eb
+  languageName: node
+  linkType: hard
+
 "@napi-rs/wasm-runtime@npm:^1.1.4":
   version: 1.1.4
   resolution: "@napi-rs/wasm-runtime@npm:1.1.4"
@@ -2603,6 +2612,7 @@ __metadata:
     "@astrojs/svelte": "npm:^8.1.0"
     "@karl-run/prettier-config": "npm:^1.1.0"
     "@lucide/astro": "npm:^1.14.0"
+    "@lucide/svelte": "npm:^1.14.0"
     "@reduxjs/toolkit": "npm:^2.11.2"
     "@tailwindcss/vite": "npm:^4.3.0"
     astro: "npm:^6.3.1"

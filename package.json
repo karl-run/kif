@@ -15,6 +15,7 @@
   "dependencies": {
     "@astrojs/svelte": "^8.1.0",
     "@lucide/astro": "^1.14.0",
+    "@lucide/svelte": "^1.14.0",
     "@reduxjs/toolkit": "^2.11.2",
     "fabric": "^7.3.1",
     "gifenc": "^1.0.3",
