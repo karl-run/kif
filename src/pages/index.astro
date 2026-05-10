@@ -30,8 +30,11 @@ const pageDescription =
     <title>{pageTitle}</title>
   </head>
   <body class="bg-white text-zinc-950 transition-colors dark:bg-zinc-950 dark:text-zinc-100">
-    <main class="mx-auto flex w-full max-w-[800px] flex-col gap-6 px-4 py-6 sm:px-6">
-      <h1 class="text-3xl font-semibold tracking-tight">Kif - Annotate gif memes</h1>
+    <main class="">
+      <header class="p-4 container mx-auto flex justify-between items-center h-22">
+        <h1 class="text-3xl font-semibold tracking-tight">Kif - Annotate gif memes</h1>
+        <a class="underline" href="https://github.com/karl-run/kif">Github source</a>
+      </header>
 
       <Editor client:load />
       <script src="@editor/editor.ts"></script>

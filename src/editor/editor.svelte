@@ -8,8 +8,13 @@
 </script>
 
 <GlobalDropZone />
-<FilePicker />
-<PreviewViewport />
-<PreviewTimeline />
-<OverlaysPanel />
-<ExportPanel />
+
+<div class="container mx-auto grid grid-cols-1 xl:grid-cols-2 gap-4">
+  <div><FilePicker /></div>
+  <div><PreviewViewport /></div>
+  <div><PreviewTimeline /></div>
+  <div class="xl:col-start-2 xl:row-start-1 xl:row-span-5">
+    <OverlaysPanel />
+  </div>
+  <div><ExportPanel /></div>
+</div>
